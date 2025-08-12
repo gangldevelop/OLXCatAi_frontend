@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OLXCatAI Function File</title>
+
+    <!-- Office JavaScript API -->
+    <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+</head>
+
+<body>
+    <div id="content-main">
+        <div class="padding">
+            <p>OLXCatAI Function File</p>
+            <p>This file provides Office.js integration for the OLXCatAI Add-In.</p>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Initialize Office.js
+        Office.onReady(function() {
+            console.log('Office.js is ready');
+        });
+
+        // Global function to get current email data
+        function getCurrentEmailData() {
+            return new Promise((resolve, reject) => {
+                Office.context.mailbox.item.getAsync(Office.CoercionType.Text, function(result) {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        const emailData = {
+                            subject: Office.context.mailbox.item.subject,
+                            sender: Office.context.mailbox.item.from.emailAddress,
+                            body: result.value,
+                            receivedDate: Office.context.mailbox.item.dateTimeCreated,
+                            id: Office.context.mailbox.item.itemId
+                        };
+                        resolve(emailData);
+                    } else {
+                        reject(new Error('Failed to get email data: ' + result.error.message));
+                    }
+                });
+            });
+        }
+
+        // Global function to categorize email
+        function categorizeEmail(categoryName) {
+            return new Promise((resolve, reject) => {
+                // Get the current folder
+                Office.context.mailbox.item.getAsync(Office.CoercionType.Text, function(result) {
+                    if (result.status === Office.AsyncResultStatus.Succeeded) {
+                        // Move email to specified category folder
+                        // This is a placeholder - actual implementation will use Microsoft Graph API
+                        console.log(`Categorizing email as: ${categoryName}`);
+                        resolve({ success: true, category: categoryName });
+                    } else {
+                        reject(new Error('Failed to categorize email: ' + result.error.message));
+                    }
+                });
+            });
+        }
+
+        // Global function to get user's email folders
+        function getUserFolders() {
+            return new Promise((resolve, reject) => {
+                // This is a placeholder - actual implementation will use Microsoft Graph API
+                const mockFolders = [
+                    { name: 'Inbox', id: 'inbox' },
+                    { name: 'Sent Items', id: 'sent' },
+                    { name: 'Drafts', id: 'drafts' },
+                    { name: 'Deleted Items', id: 'deleted' }
+                ];
+                resolve(mockFolders);
+            });
+        }
+
+        // Global function to create a new folder
+        function createFolder(folderName) {
+            return new Promise((resolve, reject) => {
+                // This is a placeholder - actual implementation will use Microsoft Graph API
+                console.log(`Creating folder: ${folderName}`);
+                resolve({ success: true, folderName: folderName });
+            });
+        }
+
+        // Global function to move email to folder
+        function moveEmailToFolder(folderId) {
+            return new Promise((resolve, reject) => {
+                // This is a placeholder - actual implementation will use Microsoft Graph API
+                console.log(`Moving email to folder: ${folderId}`);
+                resolve({ success: true, folderId: folderId });
+            });
+        }
+
+        // Global function to get user profile
+        function getUserProfile() {
+            return new Promise((resolve, reject) => {
+                // This is a placeholder - actual implementation will use Microsoft Graph API
+                const mockProfile = {
+                    displayName: 'John Doe',
+                    email: 'john.doe@company.com',
+                    id: 'user123'
+                };
+                resolve(mockProfile);
+            });
+        }
+
+        // Make functions available globally
+        window.OLXCatAI = {
+            getCurrentEmailData,
+            categorizeEmail,
+            getUserFolders,
+            createFolder,
+            moveEmailToFolder,
+            getUserProfile
+        };
+    </script>
+</body>
+</html> 

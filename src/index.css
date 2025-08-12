@@ -1,0 +1,208 @@
+/* Global styles for OLXCatAI Outlook Add-In */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Allow the page to scroll vertically */
+  min-height: 100vh;
+  overflow-y: auto;
+}
+#root { min-height: 100%; max-width: 450px; display: flex; flex-direction: column; }
+
+/* Outlook Add-In specific responsive breakpoints */
+@media (max-width: 480px) { /* Mobile phone in portrait */
+  .fui-TabList { flex-direction: column; gap: 4px; }
+  .fui-Tab { min-height: 36px; font-size: 12px; }
+  .fui-Table { font-size: 12px; }
+  .fui-TableCell, .fui-TableHeaderCell { padding: 6px 8px; }
+  .fui-Card { padding: 12px; margin: 8px 0; }
+}
+
+/* Outlook pane minimum width hardening (≈320–360px) */
+@media (max-width: 320px) {
+  body { font-size: 12px; }
+  .fui-Button, .fui-MenuButton, .fui-Tab { min-height: 40px; min-width: 40px; padding: 8px 10px; }
+  .fui-Table { font-size: 12px; }
+  .fui-TableCell, .fui-TableHeaderCell { padding: 6px 6px; }
+  .fui-Card { padding: 12px; margin: 6px 0; }
+  .hide-on-narrow { display: none !important; }
+}
+
+@media (max-width: 768px) { /* Tablet in portrait or small desktop */
+  .fui-TabList { gap: 8px; }
+  .fui-Tab { min-height: 40px; font-size: 13px; }
+  .fui-Table { font-size: 13px; }
+  .fui-TableCell, .fui-TableHeaderCell { padding: 8px 10px; }
+  .fui-Card { padding: 16px; margin: 10px 0; }
+}
+
+@media (max-width: 1024px) { /* Small desktop or tablet in landscape */
+  .fui-TabList { gap: 12px; }
+  .fui-Tab { min-height: 44px; font-size: 14px; }
+  .fui-Table { font-size: 14px; }
+  .fui-TableCell, .fui-TableHeaderCell { padding: 10px 12px; }
+  .fui-Card { padding: 20px; margin: 12px 0; }
+}
+
+/* Enhanced touch optimization for Outlook add-in */
+@media (max-width: 400px) {
+  /* Very narrow Outlook add-in pane */
+  .fui-Button, .fui-MenuButton, .fui-Tab {
+    min-height: 48px;
+    min-width: 48px;
+    padding: 12px 16px;
+  }
+  
+  .fui-TableCell, .fui-TableHeaderCell {
+    padding: 12px 8px;
+    font-size: 13px;
+  }
+  
+  .fui-MenuItem {
+    min-height: 52px;
+    padding: 16px 20px;
+  }
+  
+  /* Optimize table for very narrow panes */
+  .fui-Table {
+    font-size: 12px;
+  }
+  
+  .fui-Card {
+    padding: 12px;
+    margin: 8px 0;
+  }
+}
+
+/* Ensure proper scrolling behavior */
+.fui-Table { width: 100%; }
+.fui-TableCell, .fui-TableHeaderCell { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Burger menu specific styles */
+.fui-MenuButton {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 4px;
+}
+
+.fui-MenuButton:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+.fui-MenuPopover {
+  min-width: 200px;
+  max-width: 280px;
+}
+
+@media (max-width: 360px) {
+  .fui-MenuPopover { min-width: 160px; max-width: 220px; }
+}
+
+.fui-MenuItem {
+  min-height: 44px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.fui-MenuItem:hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}
+
+/* Optimize for touch interactions */
+@media (hover: none) and (pointer: coarse) {
+  .fui-Button, .fui-MenuButton, .fui-Tab {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .fui-Checkbox {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .fui-MenuItem {
+    min-height: 48px;
+    padding: 12px 16px;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .fui-Button, .fui-MenuButton {
+    border: 2px solid currentColor;
+  }
+  
+  .fui-Table {
+    border: 2px solid currentColor;
+  }
+  
+  .fui-TableCell, .fui-TableHeaderCell {
+    border: 1px solid currentColor;
+  }
+  
+  .fui-MenuItem:hover {
+    background-color: Highlight;
+    color: HighlightText;
+  }
+}
+
+/* Focus indicators for keyboard navigation */
+.fui-Button:focus-visible,
+.fui-MenuButton:focus-visible,
+.fui-Tab:focus-visible {
+  outline: 2px solid Highlight;
+  outline-offset: 2px;
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .fui-MenuItem {
+    transition: none;
+  }
+  
+  .fui-MenuPopover {
+    animation: none;
+  }
+  
+  /* Disable skeleton animations for users who prefer reduced motion */
+  .skeleton {
+    animation: none !important;
+  }
+}
+
+/* Skeleton loading animation */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* Outlook Add-In specific optimizations */
+@media (max-width: 400px) {
+  /* Very narrow Outlook Add-In pane */
+  .fui-MenuPopover {
+    min-width: 180px;
+    max-width: 240px;
+  }
+  
+  .fui-MenuItem {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  
+  .fui-MenuButton {
+    min-width: 40px;
+    min-height: 40px;
+  }
+} 
