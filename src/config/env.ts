@@ -4,3 +4,5 @@ export const API_BASE_URL =
 
 export const APP_ORIGIN = process.env.REACT_APP_APP_ORIGIN || 'http://localhost:3000';
 
+export const AI_ENABLE = (process.env.REACT_APP_AI_ENABLE || 'false').toLowerCase() === 'true';
+
