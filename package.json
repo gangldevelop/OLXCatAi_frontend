@@ -24,7 +24,7 @@
     "@types/react-dom": "^18.2.0"
   },
   "scripts": {
-    "start": "set PORT=3001&& set HTTPS=true&& react-scripts start",
+    "start": "set PORT=3001&& set HTTPS=true&& set REACT_APP_AI_ENABLE=true&& react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

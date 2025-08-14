@@ -424,7 +424,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
         <div className={styles.pager}>
           {onImportFromOutlook && (
             <Button size="small" onClick={() => onImportFromOutlook?.()} appearance="primary">
-              Import from Outlook
+              Sync from Outlook
             </Button>
           )}
           <Button size="small" disabled={skip === 0} onClick={() => setSkip(s => Math.max(0, s - top))}>Previous</Button>

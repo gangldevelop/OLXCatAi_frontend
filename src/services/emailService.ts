@@ -1,5 +1,5 @@
 import { http } from '../lib/http'
-import { BackendEmailMessage, CategoryPrediction } from '../types/email'
+import { BackendEmailMessage } from '../types/email'
 
 export const emailService = {
   list: (top?: number, skip?: number) =>
@@ -11,7 +11,11 @@ export const emailService = {
     http.post(`/emails/${encodeURIComponent(id)}/categorize`, { categories }).then(r => r.data),
   markRead: (id: string) => http.post(`/emails/${encodeURIComponent(id)}/read`).then(r => r.data),
   predictCategory: (id: string) =>
-    http.post<CategoryPrediction>(`/emails/${encodeURIComponent(id)}/predict-category`).then(r => r.data),
+    http
+      .post<{ success: boolean; data: { emailId: string; predictions: Array<{ categoryId: string; confidence: number }> } }>(
+        `/emails/${encodeURIComponent(id)}/predict-category`
+      )
+      .then(r => r.data.data?.predictions || []),
   move: (id: string, categoryId: string) =>
     http.post(`/emails/${encodeURIComponent(id)}/move`, { categoryId }).then(r => r.data),
   bulkMove: (messageIds: string[], categoryId: string, batchSize?: number, concurrency?: number) =>
