@@ -316,16 +316,21 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
     return 'danger';
   };
 
-  const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return 'Uncategorized';
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.name || 'Unknown';
+  const getCategoryName = (categoryId?: string, parentFolderId?: string) => {
+    let category = categoryId ? categories.find(cat => cat.id === categoryId) : undefined
+    if (!category && parentFolderId) {
+      category = categories.find(cat => cat.outlookFolderId === parentFolderId)
+    }
+    if (!category) return 'Uncategorized'
+    return category.name
   };
 
-  const getCategoryColor = (categoryId?: string) => {
-    if (!categoryId) return tokens.colorNeutralForeground3;
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.color || tokens.colorNeutralForeground3;
+  const getCategoryColor = (categoryId?: string, parentFolderId?: string) => {
+    let category = categoryId ? categories.find(cat => cat.id === categoryId) : undefined
+    if (!category && parentFolderId) {
+      category = categories.find(cat => cat.outlookFolderId === parentFolderId)
+    }
+    return category?.color || tokens.colorNeutralForeground3
   };
 
   const progress = selectedEmails.size > 0 ? (currentIndex / selectedEmails.size) * 100 : 0;
@@ -352,6 +357,9 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
               if (!bulkTarget) return
               await emailService.bulkMove(Array.from(selectedEmails), bulkTarget)
               setSelectedEmails(new Set())
+              // Reflect changes in parent state so category column updates immediately
+              const updatedEmails = emails.map(e => selectedEmails.has(e.id) ? { ...e, categoryId: bulkTarget, isProcessed: true } : e)
+              onEmailUpdate(updatedEmails)
             }}
           >
             Bulk Move
@@ -493,10 +501,10 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
                     <div className={styles.categoryBadge}>
                       <div
                         className={styles.categoryColor}
-                        style={{ backgroundColor: getCategoryColor(email.categoryId) }}
+                        style={{ backgroundColor: getCategoryColor(email.categoryId, email.parentFolderId) }}
                       />
                       <span className={styles.truncatedCell} title={getCategoryName(email.categoryId)}>
-                        {getCategoryName(email.categoryId)}
+                        {getCategoryName(email.categoryId, email.parentFolderId)}
                       </span>
                     </div>
                   </TableCell>

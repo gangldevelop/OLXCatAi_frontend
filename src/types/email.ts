@@ -31,5 +31,6 @@ export type BackendEmailMessage = {
   receivedDateTime: string
   isRead: boolean
   categories: string[]
+  parentFolderId?: string
 }
 

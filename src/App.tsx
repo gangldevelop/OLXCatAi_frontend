@@ -147,9 +147,16 @@ const App: React.FC = () => {
   };
 
   const handleEmailUpdate = (newEmails: Email[]) => {
-    // For now, we'll handle this through the hook methods
-    // In the future, this will be replaced with API calls
-    console.log('Emails updated:', newEmails);
+    newEmails.forEach(ne => {
+      const prev = emails.find(e => e.id === ne.id)
+      if (!prev) return
+      const updates: Partial<Email> = {}
+      if (prev.categoryId !== ne.categoryId) updates.categoryId = ne.categoryId
+      if (prev.isProcessed !== ne.isProcessed) updates.isProcessed = ne.isProcessed
+      if (Object.keys(updates).length > 0) {
+        updateEmail(ne.id, updates)
+      }
+    })
   };
 
   const handleSettingsChange = (newSettings: UserSettings) => {

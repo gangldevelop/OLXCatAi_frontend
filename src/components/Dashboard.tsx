@@ -163,16 +163,21 @@ const Dashboard: React.FC<DashboardProps> = ({
     .slice(0, 5)
     .sort((a, b) => b.receivedDate.getTime() - a.receivedDate.getTime());
 
-  const getCategoryName = (categoryId?: string) => {
-    if (!categoryId) return 'Uncategorized';
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.name || 'Unknown';
+  const getCategoryName = (categoryId?: string, parentFolderId?: string) => {
+    let category = categoryId ? categories.find(cat => cat.id === categoryId) : undefined
+    if (!category && parentFolderId) {
+      category = categories.find(cat => cat.outlookFolderId === parentFolderId)
+    }
+    if (!category) return 'Uncategorized'
+    return category.name
   };
 
-  const getCategoryColor = (categoryId?: string) => {
-    if (!categoryId) return tokens.colorNeutralForeground3;
-    const category = categories.find(cat => cat.id === categoryId);
-    return category?.color || tokens.colorNeutralForeground3;
+  const getCategoryColor = (categoryId?: string, parentFolderId?: string) => {
+    let category = categoryId ? categories.find(cat => cat.id === categoryId) : undefined
+    if (!category && parentFolderId) {
+      category = categories.find(cat => cat.outlookFolderId === parentFolderId)
+    }
+    return category?.color || tokens.colorNeutralForeground3
   };
 
   const processingProgress = totalEmails > 0 ? (processedEmails / totalEmails) * 100 : 0;
@@ -301,14 +306,14 @@ const Dashboard: React.FC<DashboardProps> = ({
                 <div className={styles.categoryBadge}>
                   <div
                     className={styles.categoryColor}
-                    style={{ backgroundColor: getCategoryColor(email.categoryId) }}
+                    style={{ backgroundColor: getCategoryColor(email.categoryId, (email as any).parentFolderId) }}
                   />
                   <Badge
                     appearance={email.isProcessed ? 'filled' : 'outline'}
                     color={email.isProcessed ? 'success' : 'subtle'}
                     size="small"
                   >
-                    {email.isProcessed ? getCategoryName(email.categoryId) : 'Pending'}
+                    {email.isProcessed ? getCategoryName(email.categoryId, (email as any).parentFolderId) : 'Pending'}
                   </Badge>
                 </div>
               </div>

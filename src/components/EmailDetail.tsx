@@ -26,6 +26,7 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
   const [predictions, setPredictions] = useState<Array<{ categoryId: string; confidence: number }>>([])
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | undefined>()
   const [lowConfidence, setLowConfidence] = useState(false)
+  const [predictionAttempted, setPredictionAttempted] = useState(false)
   const isHtml = useMemo(() => /<\w+/.test(email.body), [email.body])
   const safeHtml = useMemo(() => (isHtml ? DOMPurify.sanitize(email.body) : ''), [email.body, isHtml])
 
@@ -42,12 +43,16 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
     try {
       const preds = await emailService.predictCategory(email.id)
       setPredictions(preds)
+      setPredictionAttempted(true)
       const top = preds?.[0]
       if (top) {
         setSelectedCategoryId(top.categoryId)
         // low/high confidence UI is gated by backend threshold; UI treats low confidence as suggestion
         // We don't know the threshold from frontend; expose as informational only
         setLowConfidence(false)
+      } else {
+        // Clear any previously selected suggestion if no confident match is returned
+        setSelectedCategoryId(undefined)
       }
     } finally { setBusy(false) }
   }
@@ -101,7 +106,7 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
               setBusy(true)
               try {
                 await emailService.move(email.id, selectedCategoryId)
-                onUpdated({ categoryId: selectedCategoryId })
+                onUpdated({ categoryId: selectedCategoryId, isProcessed: true })
               } finally { setBusy(false) }
             }}>
             Apply
@@ -120,7 +125,7 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
               setBusy(true)
               try {
                 await emailService.move(email.id, selectedCategoryId)
-                onUpdated({ categoryId: selectedCategoryId })
+                onUpdated({ categoryId: selectedCategoryId, isProcessed: true })
               } finally { setBusy(false) }
             }}
             disabled={!selectedCategoryId}
@@ -132,6 +137,12 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
               <Text size={200} style={{ color: tokens.colorPaletteRedForeground3 }}>(low confidence)</Text>
             </Tooltip>
           )}
+        </div>
+      )}
+
+      {AI_ENABLE && predictionAttempted && predictions.length === 0 && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Text>No confident match</Text>
         </div>
       )}
 
