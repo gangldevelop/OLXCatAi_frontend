@@ -103,7 +103,7 @@ export const ensureTokens = async () => {
   } catch {}
 
   if (!AuthStore.getState().jwt) {
-    const { data } = await http.get<{ authUrl: string }>('/auth/login')
+    const { data } = await http.get<{ authUrl: string }>('/auth/login', { omitGraphToken: true } as any)
     const redirectUrl = new URL(data.authUrl)
     if (!redirectUrl.searchParams.get('redirect_uri')) {
       redirectUrl.searchParams.set('redirect_uri', `${window.location.origin}/auth-callback.html`)

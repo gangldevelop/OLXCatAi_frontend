@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { makeStyles, tokens, Text, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem, MenuButton, Badge } from '@fluentui/react-components';
-import { HomeRegular, FolderRegular, PlayRegular, SettingsRegular, MoreHorizontalRegular } from '@fluentui/react-icons';
+import { HomeRegular, FolderRegular, PlayRegular, SettingsRegular, MoreHorizontalRegular, MailRegular } from '@fluentui/react-icons';
 import Dashboard from './components/Dashboard';
 import CategoryManager from './components/CategoryManager';
 import EmailProcessor from './components/EmailProcessor';
 import EmailList from './components/EmailList';
 import EmailDetail from './components/EmailDetail';
 import Settings from './components/Settings';
+import { SubscriptionStatus } from './components/SubscriptionStatus';
+import { CategoryUpdates } from './components/CategoryUpdates';
 import { useCategories, useEmails, useSettings, useOffice } from './hooks';
 import { ensureTokens } from './lib/outlookAuth';
 import { Category, Email, UserSettings } from './types';
@@ -173,6 +175,8 @@ const App: React.FC = () => {
         return 'Category Manager';
       case 'processing':
         return 'Email Processing';
+      case 'monitoring':
+        return 'Email Monitoring';
       case 'settings':
         return 'Settings';
       default:
@@ -190,6 +194,8 @@ const App: React.FC = () => {
         return <FolderRegular />;
       case 'processing':
         return <PlayRegular />;
+      case 'monitoring':
+        return <MailRegular />;
       case 'settings':
         return <SettingsRegular />;
       default:
@@ -242,6 +248,15 @@ const App: React.FC = () => {
             onMarkAsProcessed={markAsProcessed}
             onAssignCategory={assignCategory}
           />
+        );
+      case 'monitoring':
+        return (
+          <div style={{ padding: tokens.spacingHorizontalL }}>
+            <SubscriptionStatus />
+            <div style={{ marginTop: tokens.spacingVerticalL }}>
+              <CategoryUpdates />
+            </div>
+          </div>
         );
       case 'settings':
         return (
@@ -332,6 +347,13 @@ const App: React.FC = () => {
                   >
                     <PlayRegular className={styles.menuItemIcon} />
                     <Text className={styles.menuItemText}>Email Processing</Text>
+                  </MenuItem>
+                  <MenuItem
+                    className={`${styles.menuItem} ${selectedTab === 'monitoring' ? styles.activeMenuItem : ''}`}
+                    onClick={() => handleTabSelect('monitoring')}
+                  >
+                    <MailRegular className={styles.menuItemIcon} />
+                    <Text className={styles.menuItemText}>Email Monitoring</Text>
                   </MenuItem>
                   <MenuItem
                     className={`${styles.menuItem} ${selectedTab === 'settings' ? styles.activeMenuItem : ''}`}

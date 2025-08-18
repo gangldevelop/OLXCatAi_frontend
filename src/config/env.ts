@@ -4,5 +4,7 @@ export const API_BASE_URL =
 
 export const APP_ORIGIN = process.env.REACT_APP_APP_ORIGIN || 'http://localhost:3000';
 
-export const AI_ENABLE = (process.env.REACT_APP_AI_ENABLE || 'false').toLowerCase() === 'true';
+export const AI_ENABLE = 'true'
+
+export const WEBHOOK_CLIENT_STATE = process.env.REACT_APP_WEBHOOK_CLIENT_STATE || 'olxcat-ai-webhook-secret';
 
