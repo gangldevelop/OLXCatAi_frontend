@@ -16,14 +16,20 @@ import {
   TableHeaderCell,
   TableBody,
   TableCell,
-  Tooltip,
+  Menu,
+  MenuTrigger,
+  MenuPopover,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  MenuButton,
   Badge,
   Switch,
   Text,
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { AddRegular, EditRegular, DeleteRegular, CopyRegular, CheckmarkCircleRegular } from '@fluentui/react-icons';
+import { AddRegular, EditRegular, DeleteRegular } from '@fluentui/react-icons';
 import { Category } from '../types';
 import { AuthStore } from '../stores/auth';
 import { notifyError } from '../lib/notify';
@@ -84,14 +90,19 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalXS,
   },
   tableContainer: {
-    overflow: 'auto',
+    overflowX: 'auto',
+    overflowY: 'auto',
     maxHeight: '100%',
-    '@media (max-width: 600px)': {
-      overflowX: 'auto',
-      overflowY: 'auto',
-    },
   },
   headerBar: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
+    marginBottom: tokens.spacingVerticalS,
+    flexWrap: 'wrap',
+  },
+  controlsBar: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -105,11 +116,20 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalS,
   },
   responsiveTable: {
-    minWidth: '560px',
-    '@media (max-width: 480px)': { minWidth: '500px' },
-    '@media (max-width: 360px)': { minWidth: '460px' },
+    minWidth: '320px',
+    width: 'max-content',
+    tableLayout: 'fixed',
+    '@media (max-width: 320px)': { minWidth: '320px' },
+    
   },
+  narrowHide: { '@media (max-width: 280px)': { display: 'none' } },
   truncatedCell: {
+    maxWidth: '180px',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+  },
+  keywordText: {
     maxWidth: '120px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
@@ -119,35 +139,22 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    minWidth: '120px',
-  },
-  folderCell: {
-    minWidth: '120px',
-    maxWidth: '220px',
+    minWidth: '140px',
+    width: '180px',
+    overflow: 'hidden',
   },
   keywordsCell: {
-    minWidth: '160px',
-    maxWidth: '180px',
+    minWidth: '110px',
+    width: '120px',
+    overflow: 'hidden',
   },
   statusCell: {
-    minWidth: '72px',
+    minWidth: '60px',
+    width: '70px',
     textAlign: 'left',
   },
-  actionsCell: { minWidth: '84px', textAlign: 'center' },
-  folderValue: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    maxWidth: '100%',
-  },
-  idText: {
-    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    fontSize: tokens.fontSizeBase100,
-  },
-  copyBtn: {
-    minWidth: '24px',
-    padding: 0,
-  },
+  actionsCell: { minWidth: '74px', width: '84px', textAlign: 'center' },
+  btnNoShrink: { whiteSpace: 'nowrap', flexShrink: 0 },
 });
 
 interface CategoryManagerProps {
@@ -301,14 +308,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
     return { total: data.length, page: data.slice(start, end) }
   }, [categories, debounced, skip, top])
 
-  const [copiedId, setCopiedId] = useState<string | null>(null)
-  const handleCopy = async (text: string, id: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedId(id)
-      setTimeout(() => setCopiedId(null), 1500)
-    } catch {}
-  }
+  
 
   return (
     <div className={styles.container}>
@@ -417,24 +417,31 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
         </Dialog>
       </div>
 
-      <div className={styles.headerBar}>
+      <div className={styles.controlsBar}>
+        <Input value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="Search categories" style={{ flex: 1, minWidth: 140 }} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Input value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="Search categories" style={{ width: 220 }} />
-        </div>
-        <div className={styles.pager}>
-          {onImportFromOutlook && (
-            <Button size="small" onClick={() => onImportFromOutlook?.()} appearance="primary">
-              Sync from Outlook
-            </Button>
-          )}
-          <Button size="small" disabled={skip === 0} onClick={() => setSkip(s => Math.max(0, s - top))}>Previous</Button>
-          <Text size={100}>Page {Math.floor(skip / top) + 1}</Text>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button size="small" onClick={() => { setTop(10); setSkip(0) }} appearance={top === 10 ? 'primary' : 'secondary'}>10</Button>
-            <Button size="small" onClick={() => { setTop(20); setSkip(0) }} appearance={top === 20 ? 'primary' : 'secondary'}>20</Button>
-            <Button size="small" onClick={() => { setTop(50); setSkip(0) }} appearance={top === 50 ? 'primary' : 'secondary'}>50</Button>
-          </div>
-          <Button size="small" onClick={() => setSkip(s => s + top)}>Next</Button>
+          <Text size={100}>Pg {Math.floor(skip / top) + 1}</Text>
+          <Menu>
+            <MenuTrigger>
+              <MenuButton size="small" appearance="secondary">Actions</MenuButton>
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                {onImportFromOutlook && (
+                  <MenuItem onClick={() => onImportFromOutlook?.()}>Sync from Outlook</MenuItem>
+                )}
+                <MenuDivider />
+                <MenuItem disabled>Page {Math.floor(skip / top) + 1} of {Math.max(1, Math.ceil(filtered.total / top))}</MenuItem>
+                <MenuItem disabled>Total: {filtered.total}</MenuItem>
+                <MenuItem onClick={() => setSkip(s => Math.max(0, s - top))} disabled={skip === 0}>Previous Page</MenuItem>
+                <MenuItem onClick={() => setSkip(s => s + top)} disabled={skip + top >= filtered.total}>Next Page</MenuItem>
+                <MenuDivider />
+                <MenuItem onClick={() => { setTop(10); setSkip(0); }}>10 / page</MenuItem>
+                <MenuItem onClick={() => { setTop(20); setSkip(0); }}>20 / page</MenuItem>
+                <MenuItem onClick={() => { setTop(50); setSkip(0); }}>50 / page</MenuItem>
+              </MenuList>
+            </MenuPopover>
+          </Menu>
         </div>
       </div>
 
@@ -443,8 +450,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
         <TableHeader>
           <TableRow>
             <TableHeaderCell className={styles.categoryCell}>Category</TableHeaderCell>
-              <TableHeaderCell className={`${styles.folderCell} hide-on-narrow`}>Folder</TableHeaderCell>
-              <TableHeaderCell className={`${styles.keywordsCell} hide-on-narrow`}>Keywords</TableHeaderCell>
+            <TableHeaderCell className={`${styles.keywordsCell} ${styles.narrowHide}`}>Keywords</TableHeaderCell>
             <TableHeaderCell className={styles.statusCell}>Status</TableHeaderCell>
             <TableHeaderCell className={styles.actionsCell}>Actions</TableHeaderCell>
           </TableRow>
@@ -453,50 +459,27 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
           {filtered.page.map((category) => (
             <TableRow key={category.id}>
               <TableCell className={styles.categoryCell}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
                   <div style={{ width: 12, height: 12, backgroundColor: category.color, borderRadius: '50%' }} />
                   <span className={styles.truncatedCell} title={category.name}>
                     {category.name}
                   </span>
                     {!category.outlookFolderId && (
-                      <Badge appearance="outline" color="brand">Label-only</Badge>
+                      <Badge appearance="outline" color="brand" size="small" style={{ fontSize: tokens.fontSizeBase100 }}>Label-only</Badge>
                     )}
                 </div>
               </TableCell>
-                <TableCell className={`${styles.folderCell} hide-on-narrow`}>
-                {category.outlookFolderId ? (
-                  <div className={styles.folderValue}>
-                    <Tooltip content={category.outlookFolderId} relationship="label">
-                      <span className={`${styles.truncatedCell} ${styles.idText}`} title={category.outlookFolderId}>
-                        {category.outlookFolderId}
-                      </span>
-                    </Tooltip>
-                    <Tooltip content={copiedId === category.id ? 'Copied' : 'Copy ID'} relationship="description">
-                      <Button
-                        className={styles.copyBtn}
-                        appearance="subtle"
-                        icon={copiedId === category.id ? <CheckmarkCircleRegular /> : <CopyRegular />}
-                        onClick={() => handleCopy(category.outlookFolderId!, category.id)}
-                        aria-label="Copy folder id"
-                      />
-                    </Tooltip>
-                  </div>
-                ) : (
-                  <Badge appearance="outline" color="brand">Label-only</Badge>
-                )}
-              </TableCell>
-                <TableCell className={`${styles.keywordsCell} hide-on-narrow`}>
+              
+                <TableCell className={`${styles.keywordsCell} ${styles.narrowHide}`}>
                 {Array.isArray(category.keywords) && category.keywords.length > 0 ? (
-                  <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                    {category.keywords.slice(0, 3).map((kw: string, i: number) => (
-                      <Badge key={i} appearance="filled" size="small">
-                        <span className={styles.truncatedCell} title={kw}>
-                          {kw}
-                        </span>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, flexWrap: 'nowrap', overflow: 'hidden' }}>
+                    {category.keywords.slice(0, 1).map((kw: string, i: number) => (
+                      <Badge key={i} appearance="filled" size="small" style={{ fontSize: tokens.fontSizeBase100, maxWidth: 120 }}>
+                        <span className={styles.keywordText} title={kw}>{kw}</span>
                       </Badge>
                     ))}
-                    {category.keywords.length > 3 && (
-                      <Badge appearance="filled" size="small">+{category.keywords.length - 3}</Badge>
+                    {category.keywords.length > 1 && (
+                      <Badge appearance="filled" size="small" style={{ fontSize: tokens.fontSizeBase100 }}>+{category.keywords.length - 1}</Badge>
                     )}
                   </div>
                 ) : (
@@ -507,6 +490,8 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
                 <Badge
                   appearance={category.isActive ? 'filled' : 'outline'}
                   color={category.isActive ? 'success' : 'subtle'}
+                  size="small"
+                  style={{ fontSize: tokens.fontSizeBase100 }}
                 >
                   {category.isActive ? 'Active' : 'Inactive'}
                 </Badge>

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge } from '@fluentui/react-components'
+import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem, MenuDivider } from '@fluentui/react-components'
 import { emailService } from '../services/emailService'
 import { Email } from '../types'
 import { BackendEmailMessage } from '../types/email'
@@ -9,11 +9,11 @@ const useStyles = makeStyles({
   container: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, height: '100%', minHeight: 0, overflow: 'auto' },
   header: { display: 'flex', gap: tokens.spacingHorizontalS, alignItems: 'center', flexWrap: 'wrap' },
   listWrap: { flex: 1, overflow: 'auto', border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium },
-  table: { minWidth: '620px', tableLayout: 'fixed' },
+  table: { minWidth: '360px', tableLayout: 'fixed' },
   subjectCell: { width: '52%' },
   truncated: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' },
   pager: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  narrowHide: { '@media (max-width: 360px)': { display: 'none' } },
+  narrowHide: { '@media (max-width: 420px)': { display: 'none' } },
 })
 
 type Props = {
@@ -74,8 +74,8 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Subject</TableHeaderCell>
-              <TableHeaderCell className="hide-on-narrow">From</TableHeaderCell>
-              <TableHeaderCell className="hide-on-narrow">Received</TableHeaderCell>
+              <TableHeaderCell className={styles.narrowHide}>From</TableHeaderCell>
+              <TableHeaderCell className={styles.narrowHide}>Date</TableHeaderCell>
               <TableHeaderCell>Status</TableHeaderCell>
             </TableRow>
           </TableHeader>
@@ -87,12 +87,12 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
                     <span className={styles.truncated}>{it.subject}</span>
                   </Tooltip>
                 </TableCell>
-                <TableCell className="hide-on-narrow">
+                <TableCell className={styles.narrowHide}>
                   <Tooltip content={it.sender} relationship="label">
                     <span className={styles.truncated}>{it.sender}</span>
                   </Tooltip>
                 </TableCell>
-                <TableCell className="hide-on-narrow">
+                <TableCell className={styles.narrowHide}>
                   <span>{it.receivedDate.toLocaleString()}</span>
                 </TableCell>
                 <TableCell>
@@ -107,14 +107,22 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
       </div>
 
       <div className={styles.pager}>
-        <Button size="small" disabled={skip === 0} onClick={prevPage}>Previous</Button>
-        <Text size={100}>Page {Math.floor(skip / top) + 1}</Text>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button size="small" onClick={() => setTop(10)} appearance={top === 10 ? 'primary' : 'secondary'}>10</Button>
-          <Button size="small" onClick={() => setTop(20)} appearance={top === 20 ? 'primary' : 'secondary'}>20</Button>
-          <Button size="small" onClick={() => setTop(50)} appearance={top === 50 ? 'primary' : 'secondary'}>50</Button>
-        </div>
-        <Button size="small" onClick={nextPage}>Next</Button>
+        <Text size={100}>Pg {Math.floor(skip / top) + 1}</Text>
+        <Menu>
+          <MenuTrigger>
+            <MenuButton size="small" appearance="secondary">Actions</MenuButton>
+          </MenuTrigger>
+          <MenuPopover>
+            <MenuList>
+              <MenuItem onClick={prevPage} disabled={skip === 0}>Previous Page</MenuItem>
+              <MenuItem onClick={nextPage}>Next Page</MenuItem>
+              <MenuDivider />
+              <MenuItem onClick={() => { setTop(10); setSkip(0) }}>10 / page</MenuItem>
+              <MenuItem onClick={() => { setTop(20); setSkip(0) }}>20 / page</MenuItem>
+              <MenuItem onClick={() => { setTop(50); setSkip(0) }}>50 / page</MenuItem>
+            </MenuList>
+          </MenuPopover>
+        </Menu>
       </div>
     </div>
   )

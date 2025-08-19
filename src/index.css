@@ -11,7 +11,7 @@ body {
   min-height: 100vh;
   overflow-y: auto;
 }
-#root { min-height: 100%; max-width: 450px; display: flex; flex-direction: column; }
+#root { min-height: 100%; max-width: 360px; display: flex; flex-direction: column; }
 
 /* Outlook Add-In specific responsive breakpoints */
 @media (max-width: 480px) { /* Mobile phone in portrait */

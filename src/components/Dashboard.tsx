@@ -10,15 +10,10 @@ import {
   Text,
   Spinner,
 } from '@fluentui/react-components';
-import {
-  MailRegular,
-  FolderRegular,
-  CheckmarkRegular,
-  TagErrorRegular,
-  PlayRegular,
-  SettingsRegular,
-} from '@fluentui/react-icons';
+import { MailRegular, FolderRegular, CheckmarkRegular, PlayRegular } from '@fluentui/react-icons';
 import { Category, Email, CategoryStats } from '../types';
+import { useSubscriptions } from '../hooks/useSubscriptions';
+import { AuthStore } from '../stores/auth';
 
 const useStyles = makeStyles({
   container: {
@@ -27,14 +22,7 @@ const useStyles = makeStyles({
     minHeight: 0,
     overflow: 'auto',
   },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: tokens.spacingVerticalS,
-    flexWrap: 'wrap',
-    gap: tokens.spacingVerticalS,
-  },
+  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacingVerticalS, flexWrap: 'wrap', gap: tokens.spacingVerticalS },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
@@ -47,6 +35,18 @@ const useStyles = makeStyles({
     '@media (max-width: 360px)': {
       gridTemplateColumns: 'repeat(2, 1fr)'
     }
+  },
+  monitoringStrip: {
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground1,
+    padding: tokens.spacingHorizontalM,
+    marginBottom: tokens.spacingVerticalM,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
+    flexWrap: 'wrap',
   },
   statCard: {
     padding: tokens.spacingHorizontalS,
@@ -74,16 +74,7 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase100,
     color: tokens.colorNeutralForeground3,
   },
-  quickActions: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-    gap: tokens.spacingHorizontalS,
-    marginBottom: tokens.spacingVerticalM,
-    '@media (max-width: 480px)': {
-      gridTemplateColumns: 'repeat(1, 1fr)',
-      gap: tokens.spacingVerticalS,
-    },
-  },
+  quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: tokens.spacingHorizontalS, marginBottom: tokens.spacingVerticalM },
   actionCard: {
     padding: tokens.spacingHorizontalM,
     cursor: 'pointer',
@@ -100,13 +91,7 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalXS,
     marginBottom: tokens.spacingVerticalXS,
   },
-  recentActivity: {
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    overflow: 'hidden',
-    maxHeight: '300px',
-    overflowY: 'auto',
-  },
+  recentActivity: { border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden' },
   activityHeader: {
     padding: tokens.spacingHorizontalM,
     backgroundColor: tokens.colorNeutralBackground2,
@@ -152,6 +137,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   onNavigate,
 }) => {
   const styles = useStyles();
+  const { subscriptions, loading, startEmailMonitoring } = useSubscriptions();
+  const { graphToken } = AuthStore.getState();
 
   const totalEmails = emails.length;
   const processedEmails = emails.filter(email => email.isProcessed).length;
@@ -184,16 +171,25 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className={styles.container}>
+      <div className={styles.monitoringStrip}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <MailRegular />
+          <Text weight="semibold">Email Monitoring</Text>
+          <Badge appearance={subscriptions.some(s => s.isActive) ? 'filled' : 'tint'} color={subscriptions.some(s => s.isActive) ? 'success' : 'subtle'} size="small" style={{ fontSize: tokens.fontSizeBase100 }}>
+            {subscriptions.some(s => s.isActive) ? 'Active' : 'Inactive'}
+          </Badge>
+        </div>
+        {graphToken && !subscriptions.some(s => s.isActive) && (
+          <Button appearance="primary" size="small" onClick={() => startEmailMonitoring()} disabled={loading}>
+            Start Monitoring
+          </Button>
+        )}
+        {!graphToken && (
+          <Text size={200} color="neutral">Sign in to Outlook to enable monitoring</Text>
+        )}
+      </div>
       <div className={styles.header}>
-        <h2>Dashboard</h2>
-        <Button
-          appearance="secondary"
-          size="small"
-          icon={<SettingsRegular />}
-          onClick={() => onNavigate('settings')}
-        >
-          Settings
-        </Button>
+        <h2>Home</h2>
       </div>
 
       <div className={styles.statsGrid}>
@@ -239,10 +235,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <div className={styles.quickActions}>
-        <Card
-          className={styles.actionCard}
-          onClick={() => onNavigate('categories')}
-        >
+        <Card className={styles.actionCard} onClick={() => onNavigate('categories')}>
           <CardHeader
             image={<FolderRegular />}
             header={<Text weight="semibold">Manage Categories</Text>}
@@ -254,10 +247,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </CardPreview>
         </Card>
 
-        <Card
-          className={styles.actionCard}
-          onClick={() => onNavigate('processing')}
-        >
+        <Card className={styles.actionCard} onClick={() => onNavigate('processing')}>
           <CardHeader
             image={<PlayRegular />}
             header={<Text weight="semibold">Process Emails</Text>}
@@ -270,21 +260,6 @@ const Dashboard: React.FC<DashboardProps> = ({
             </Text>
           </CardPreview>
         </Card>
-
-        {/* <Card
-          className={styles.actionCard}
-          onClick={() => onNavigate('settings')}
-        >
-          <CardHeader
-            image={<SettingsRegular />}
-            header={<Text weight="semibold">Settings</Text>}
-          />
-          <CardPreview>
-            <Text size={200} color="neutral">
-              Configure preferences and options
-            </Text>
-          </CardPreview>
-        </Card> */}
       </div>
 
       <div className={styles.recentActivity}>
@@ -299,9 +274,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                   <Text weight="semibold" truncate style={{ maxWidth: '300px' }}>
                     {email.subject}
                   </Text>
-                  <Text size={200} color="neutral">
-                    {email.sender} • {email.receivedDate.toLocaleDateString()}
-                  </Text>
+                  <Text size={200} color="neutral">{email.sender} • {email.receivedDate.toLocaleDateString()}</Text>
                 </div>
                 <div className={styles.categoryBadge}>
                   <div
@@ -312,6 +285,7 @@ const Dashboard: React.FC<DashboardProps> = ({
                     appearance={email.isProcessed ? 'filled' : 'outline'}
                     color={email.isProcessed ? 'success' : 'subtle'}
                     size="small"
+                    style={{ fontSize: tokens.fontSizeBase100 }}
                   >
                     {email.isProcessed ? getCategoryName(email.categoryId, (email as any).parentFolderId) : 'Pending'}
                   </Badge>
