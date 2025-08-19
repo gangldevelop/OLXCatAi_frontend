@@ -20,5 +20,13 @@ export const emailService = {
     http.post(`/emails/${encodeURIComponent(id)}/move`, { categoryId }).then(r => r.data),
   bulkMove: (messageIds: string[], categoryId: string, batchSize?: number, concurrency?: number) =>
     http.post('/emails/bulk-move', { messageIds, categoryId, batchSize, concurrency }).then(r => r.data),
+  feedback: (id: string, categoryId: string, autoMove: boolean = true) =>
+    http
+      .post(
+        `/emails/${encodeURIComponent(id)}/feedback`,
+        { categoryId, autoMove },
+        { graphRequired: true } as any
+      )
+      .then(r => r.data),
 }
 

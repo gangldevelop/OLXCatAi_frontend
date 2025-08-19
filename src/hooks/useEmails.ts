@@ -10,6 +10,7 @@ export const useEmails = () => {
   const [emails, setEmails] = useState<Email[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // live polling removed to avoid rate limiting; will rely on manual refresh or backend push
 
   const load = useCallback(async (top?: number, skip?: number) => {
     setLoading(true)
@@ -27,6 +28,8 @@ export const useEmails = () => {
   useEffect(() => {
     load()
   }, [load])
+
+  // removed polling effect
 
   const addEmail = useCallback((email: Omit<Email, 'id'>) => {
     const newEmail: Email = { ...email, id: Date.now().toString() }
@@ -50,8 +53,8 @@ export const useEmails = () => {
 
   const assignCategory = useCallback(async (emailId: string, categoryId: string) => {
     try {
-      await emailService.categorize(emailId, [categoryId])
-      setEmails(prev => prev.map(email => email.id === emailId ? { ...email, categoryId } : email))
+      await emailService.feedback(emailId, categoryId, true)
+      setEmails(prev => prev.map(email => email.id === emailId ? { ...email, categoryId, isProcessed: true } : email))
     } catch {}
   }, [])
 

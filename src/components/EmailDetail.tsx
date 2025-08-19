@@ -5,6 +5,7 @@ import { Email } from '../types'
 import { emailService } from '../services/emailService'
 import { Category } from '../types'
 import { AI_ENABLE } from '../config/env'
+import { notifyError, notifySuccess, notifyInfo } from '../lib/notify'
 
 const useStyles = makeStyles({
   container: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, height: '100%', minHeight: 0, overflow: 'auto' },
@@ -57,21 +58,36 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
     } finally { setBusy(false) }
   }
 
-  const categorize = async (categoryId: string) => {
+  const sendFeedbackAndToast = async (targetCategoryId: string) => {
     setBusy(true)
     try {
-      await emailService.categorize(email.id, [categoryId])
-      onUpdated({ categoryId })
-    } finally { setBusy(false) }
+      const resp: any = await emailService.feedback(email.id, targetCategoryId, true)
+      const moved = resp?.data?.moveResult?.moved === true
+      const alreadyIn = resp?.data?.moveResult?.reason === 'already-in-destination'
+      const categoryName = categories.find(c => c.id === targetCategoryId)?.name || 'Category'
+      onUpdated({ categoryId: targetCategoryId, isProcessed: moved ? true : undefined })
+      if (moved) {
+        notifySuccess('Learning applied', `Message moved to ${categoryName}.`)
+      } else if (alreadyIn) {
+        notifyInfo('Already in destination', `Already in ${categoryName}.`)
+      } else {
+        const hasFolder = !!categories.find(c => c.id === targetCategoryId)?.outlookFolderId
+        if (!hasFolder) {
+          notifyInfo('Learning applied only', 'Category has no Outlook folder; learning applied only.')
+        } else {
+          notifySuccess('Learning applied', `Category updated to ${categoryName}.`)
+        }
+      }
+    } catch (e: any) {
+      notifyError('Feedback failed', e?.message || 'Unable to apply feedback')
+    } finally {
+      setBusy(false)
+    }
   }
 
   const move = async () => {
     if (!moveTarget) return
-    setBusy(true)
-    try {
-      await emailService.move(email.id, moveTarget)
-      onUpdated({ categoryId: moveTarget })
-    } finally { setBusy(false) }
+    await sendFeedbackAndToast(moveTarget)
   }
 
   return (
@@ -103,11 +119,7 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
           <Button appearance="primary" size="small"
             onClick={async () => {
               if (!selectedCategoryId) return
-              setBusy(true)
-              try {
-                await emailService.move(email.id, selectedCategoryId)
-                onUpdated({ categoryId: selectedCategoryId, isProcessed: true })
-              } finally { setBusy(false) }
+              await sendFeedbackAndToast(selectedCategoryId)
             }}>
             Apply
           </Button>
@@ -122,11 +134,7 @@ const EmailDetail: React.FC<Props> = ({ email, categories, onBack, onUpdated }) 
           <Button size="small"
             onClick={async () => {
               if (!selectedCategoryId) return
-              setBusy(true)
-              try {
-                await emailService.move(email.id, selectedCategoryId)
-                onUpdated({ categoryId: selectedCategoryId, isProcessed: true })
-              } finally { setBusy(false) }
+              await sendFeedbackAndToast(selectedCategoryId)
             }}
             disabled={!selectedCategoryId}
           >

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem, MenuDivider } from '@fluentui/react-components'
+import { notifyInfo } from '../lib/notify'
 import { emailService } from '../services/emailService'
 import { Email } from '../types'
 import { BackendEmailMessage } from '../types/email'
@@ -67,6 +68,9 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
         <Button size="small" onClick={() => { setSkip(0); setDebouncedQ(q) }}>Search</Button>
         {loading && <Spinner size="tiny" />}
         {error && <Text color="danger">{error}</Text>}
+        {!loading && (
+          <Button size="small" appearance="secondary" onClick={() => { setSkip(0); load(); notifyInfo('Refreshed', 'Latest categorization applied'); }}>Refresh</Button>
+        )}
       </div>
 
       <div className={styles.listWrap}>
