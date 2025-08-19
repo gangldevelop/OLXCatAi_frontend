@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles, tokens, Text, Menu, MenuTrigger, MenuPopover, MenuList, MenuItem, MenuButton, Badge } from '@fluentui/react-components';
-import { HomeRegular, FolderRegular, PlayRegular, SettingsRegular, MoreHorizontalRegular } from '@fluentui/react-icons';
+import { makeStyles, tokens, Text, Badge, TabList, Tab, Button } from '@fluentui/react-components';
+import { HomeRegular, FolderRegular, PlayRegular, SettingsRegular, MailRegular } from '@fluentui/react-icons';
 import Dashboard from './components/Dashboard';
 import CategoryManager from './components/CategoryManager';
 import EmailProcessor from './components/EmailProcessor';
 import EmailList from './components/EmailList';
 import EmailDetail from './components/EmailDetail';
 import Settings from './components/Settings';
+import { SubscriptionStatus } from './components/SubscriptionStatus';
+import { CategoryUpdates } from './components/CategoryUpdates';
 import { useCategories, useEmails, useSettings, useOffice } from './hooks';
-import { ensureTokens } from './lib/outlookAuth';
+import { ensureTokens, signOut } from './lib/outlookAuth';
 import { Category, Email, UserSettings } from './types';
 
 const useStyles = makeStyles({
@@ -71,8 +73,10 @@ const useStyles = makeStyles({
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
     backgroundColor: tokens.colorNeutralBackground1,
+  },
+  tabsWrap: {
     display: 'flex',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
   },
   navigationTitle: {
@@ -87,8 +91,7 @@ const useStyles = makeStyles({
     },
   },
   burgerMenu: {
-    display: 'flex',
-    alignItems: 'center',
+    display: 'none',
   },
   content: {
     flex: 1,
@@ -118,7 +121,7 @@ const useStyles = makeStyles({
 
 const App: React.FC = () => {
   const styles = useStyles();
-  const [selectedTab, setSelectedTab] = useState<string>('emails');
+  const [selectedTab, setSelectedTab] = useState<string>('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   
@@ -147,9 +150,16 @@ const App: React.FC = () => {
   };
 
   const handleEmailUpdate = (newEmails: Email[]) => {
-    // For now, we'll handle this through the hook methods
-    // In the future, this will be replaced with API calls
-    console.log('Emails updated:', newEmails);
+    newEmails.forEach(ne => {
+      const prev = emails.find(e => e.id === ne.id)
+      if (!prev) return
+      const updates: Partial<Email> = {}
+      if (prev.categoryId !== ne.categoryId) updates.categoryId = ne.categoryId
+      if (prev.isProcessed !== ne.isProcessed) updates.isProcessed = ne.isProcessed
+      if (Object.keys(updates).length > 0) {
+        updateEmail(ne.id, updates)
+      }
+    })
   };
 
   const handleSettingsChange = (newSettings: UserSettings) => {
@@ -158,31 +168,35 @@ const App: React.FC = () => {
 
   const getTabTitle = () => {
     switch (selectedTab) {
-      case 'dashboard':
-        return 'Dashboard';
+      case 'home':
+        return 'Home';
       case 'emails':
         return 'Emails';
       case 'categories':
         return 'Category Manager';
       case 'processing':
         return 'Email Processing';
+      case 'monitoring':
+        return 'Email Monitoring';
       case 'settings':
         return 'Settings';
       default:
-        return 'Dashboard';
+        return 'Home';
     }
   };
 
   const getTabIcon = () => {
     switch (selectedTab) {
-      case 'dashboard':
+      case 'home':
         return <HomeRegular />;
       case 'emails':
-        return <HomeRegular />;
+        return <MailRegular />;
       case 'categories':
         return <FolderRegular />;
       case 'processing':
         return <PlayRegular />;
+      case 'monitoring':
+        return <MailRegular />;
       case 'settings':
         return <SettingsRegular />;
       default:
@@ -192,7 +206,7 @@ const App: React.FC = () => {
 
   const renderContent = () => {
     switch (selectedTab) {
-      case 'dashboard':
+      case 'home':
         return (
           <Dashboard
             emails={emails}
@@ -236,6 +250,15 @@ const App: React.FC = () => {
             onAssignCategory={assignCategory}
           />
         );
+      case 'monitoring':
+        return (
+          <div style={{ padding: tokens.spacingHorizontalL }}>
+            <SubscriptionStatus />
+            <div style={{ marginTop: tokens.spacingVerticalL }}>
+              <CategoryUpdates />
+            </div>
+          </div>
+        );
       case 'settings':
         return (
           <Settings
@@ -264,78 +287,19 @@ const App: React.FC = () => {
             <Text className={styles.logoText}>OLXCatAI</Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Text size={200} color="neutral">
-              AI-Powered Email Categorization
-            </Text>
-            {isOfficeReady && (
-              <Badge appearance="filled" color="success" size="small">
-                Outlook Connected
-              </Badge>
-            )}
-            {!isOfficeReady && (
-              <Badge appearance="filled" color="warning" size="small">
-                Standalone Mode
-              </Badge>
-            )}
+            <Button size="small" onClick={async () => { await signOut(); window.location.reload(); }}>Sign Out</Button>
           </div>
         </div>
       </header>
 
       <main className={styles.main}>
         <div className={styles.navigation}>
-          <div className={styles.navigationTitle}>
-            {getTabIcon()} {getTabTitle()}
-          </div>
-          
-          <div className={styles.burgerMenu}>
-            <Menu open={isMenuOpen} onOpenChange={(e, data) => setIsMenuOpen(data.open)}>
-              <MenuTrigger>
-                <MenuButton
-                  appearance="transparent"
-                  icon={<MoreHorizontalRegular />}
-                  aria-label="Navigation menu"
-                />
-              </MenuTrigger>
-              <MenuPopover>
-                <MenuList>
-                  <MenuItem
-                    className={`${styles.menuItem} ${selectedTab === 'emails' ? styles.activeMenuItem : ''}`}
-                    onClick={() => handleTabSelect('emails')}
-                  >
-                    <HomeRegular className={styles.menuItemIcon} />
-                    <Text className={styles.menuItemText}>Emails</Text>
-                  </MenuItem>
-                  <MenuItem
-                    className={`${styles.menuItem} ${selectedTab === 'dashboard' ? styles.activeMenuItem : ''}`}
-                    onClick={() => handleTabSelect('dashboard')}
-                  >
-                    <HomeRegular className={styles.menuItemIcon} />
-                    <Text className={styles.menuItemText}>Dashboard</Text>
-                  </MenuItem>
-                  <MenuItem
-                    className={`${styles.menuItem} ${selectedTab === 'categories' ? styles.activeMenuItem : ''}`}
-                    onClick={() => handleTabSelect('categories')}
-                  >
-                    <FolderRegular className={styles.menuItemIcon} />
-                    <Text className={styles.menuItemText}>Categories</Text>
-                  </MenuItem>
-                  <MenuItem
-                    className={`${styles.menuItem} ${selectedTab === 'processing' ? styles.activeMenuItem : ''}`}
-                    onClick={() => handleTabSelect('processing')}
-                  >
-                    <PlayRegular className={styles.menuItemIcon} />
-                    <Text className={styles.menuItemText}>Email Processing</Text>
-                  </MenuItem>
-                  <MenuItem
-                    className={`${styles.menuItem} ${selectedTab === 'settings' ? styles.activeMenuItem : ''}`}
-                    onClick={() => handleTabSelect('settings')}
-                  >
-                    <SettingsRegular className={styles.menuItemIcon} />
-                    <Text className={styles.menuItemText}>Settings</Text>
-                  </MenuItem>
-                </MenuList>
-              </MenuPopover>
-            </Menu>
+          <div className={styles.tabsWrap}>
+            <TabList selectedValue={selectedTab} onTabSelect={(_, data) => handleTabSelect(String(data.value))}>
+              <Tab icon={<HomeRegular />} value="home">Home</Tab>
+              <Tab icon={<MailRegular />} value="emails">Emails</Tab>
+              <Tab icon={<SettingsRegular />} value="settings">Settings</Tab>
+            </TabList>
           </div>
         </div>
 

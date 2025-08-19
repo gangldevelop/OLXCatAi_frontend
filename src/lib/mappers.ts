@@ -32,6 +32,7 @@ export const mapBackendEmailToEmail = (backend: BackendEmailMessage): Email => (
   receivedDate: new Date(backend.receivedDateTime),
   categoryId: Array.isArray(backend.categories) && backend.categories.length > 0 ? backend.categories[0] : undefined,
   isProcessed: !!backend.isRead,
+  parentFolderId: backend.parentFolderId,
 })
 
 
