@@ -128,17 +128,15 @@ const useStyles = makeStyles({
   tableContainer: {
     overflow: 'auto',
     maxHeight: '100%',
-    '@media (max-width: 600px)': {
-      overflowX: 'auto',
-      overflowY: 'auto',
-    },
+    '@media (max-width: 600px)': { overflowX: 'auto', overflowY: 'auto' },
   },
   responsiveTable: {
-    minWidth: '620px',
+    minWidth: '560px',
     tableLayout: 'fixed',
     '@media (max-width: 480px)': { minWidth: '560px' },
     '@media (max-width: 360px)': { minWidth: '500px' },
   },
+  narrowHide: { '@media (max-width: 420px)': { display: 'none' } },
   truncatedCell: {
     maxWidth: '150px',
     overflow: 'hidden',
@@ -459,9 +457,9 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
                 </TableHeaderCell>
                   <TableHeaderCell className={styles.statusCell}>St</TableHeaderCell>
                   <TableHeaderCell className={styles.subjectCell}>Subject</TableHeaderCell>
-              <TableHeaderCell className={`${styles.senderCell} hide-on-narrow`}>Sender</TableHeaderCell>
-              <TableHeaderCell className={`${styles.categoryCell} hide-on-narrow`}>Category</TableHeaderCell>
-              <TableHeaderCell className={`${styles.dateCell} hide-on-narrow`}>Date</TableHeaderCell>
+              <TableHeaderCell className={`${styles.senderCell} ${styles.narrowHide}`}>Sender</TableHeaderCell>
+              <TableHeaderCell className={`${styles.categoryCell} ${styles.narrowHide}`}>Category</TableHeaderCell>
+              <TableHeaderCell className={`${styles.dateCell} ${styles.narrowHide}`}>Date</TableHeaderCell>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -482,6 +480,7 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
                         appearance="filled"
                         color={getStatusColor(email)}
                         size="small"
+                        style={{ fontSize: tokens.fontSizeBase100 }}
                       >
                         {email.isProcessed ? 'Done' : 'New'}
                       </Badge>
@@ -492,12 +491,12 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
                       {email.subject}
                     </span>
                   </TableCell>
-                  <TableCell className={`${styles.senderCell} hide-on-narrow`}>
+                  <TableCell className={`${styles.senderCell} ${styles.narrowHide}`}>
                     <span className={styles.truncatedCell} title={email.sender}>
                       {email.sender}
                     </span>
                   </TableCell>
-                  <TableCell className={`${styles.categoryCell} hide-on-narrow`}>
+                  <TableCell className={`${styles.categoryCell} ${styles.narrowHide}`}>
                     <div className={styles.categoryBadge}>
                       <div
                         className={styles.categoryColor}
@@ -508,8 +507,8 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
                       </span>
                     </div>
                   </TableCell>
-                  <TableCell className={`${styles.dateCell} hide-on-narrow`}>
-                    <span style={{ fontSize: tokens.fontSizeBase200 }}>
+                  <TableCell className={`${styles.dateCell} ${styles.narrowHide}`}>
+                    <span style={{ fontSize: tokens.fontSizeBase100 }}>
                       {email.receivedDate.toLocaleDateString()}
                     </span>
                   </TableCell>

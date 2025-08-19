@@ -4,9 +4,7 @@ import { FluentProvider, webLightTheme} from '@fluentui/react-components';
 import './index.css';
 import App from './App';
 import SignInGate from './components/SignInGate';
-import HeaderBar from './components/HeaderBar';
 import { AuthStore } from './stores/auth';
-import { API_BASE_URL } from './config/env';
 import GlobalToaster from './components/Toaster';
 import { testOfficeIntegration, simulateOfficeContext } from './utils/officeTest';
 
@@ -27,29 +25,15 @@ if (process.env.NODE_ENV === 'development') {
 
 const Root: React.FC = () => {
   const [authed, setAuthed] = React.useState(!!(AuthStore.getState().jwt && AuthStore.getState().graphToken))
-  const [health, setHealth] = React.useState<'ok' | 'warn' | 'down' | undefined>()
 
   React.useEffect(() => {
     const unsub = AuthStore.subscribe(s => setAuthed(!!(s.jwt && s.graphToken)))
     return unsub
   }, [])
 
-  React.useEffect(() => {
-    const check = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/health/status`)
-        setHealth(res.ok ? 'ok' : 'warn')
-      } catch {
-        setHealth('down')
-      }
-    }
-    check()
-  }, [])
-
   return (
     <FluentProvider theme={webLightTheme} style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <GlobalToaster />
-      <HeaderBar health={health} />
       <div style={{ flex: 1, minHeight: 0, display: 'flex' }}>
         {authed ? <App /> : <SignInGate onSignedIn={() => setAuthed(true)} />}
       </div>
