@@ -23,10 +23,12 @@ export const emailService = {
       )
       .then(r => r.data.data?.predictions || []),
   move: (id: string, categoryId: string) =>
-    http.post(`/emails/${encodeURIComponent(id)}/move`, { categoryId }).then(r => r.data),
+    http
+      .post(`/emails/${encodeURIComponent(id)}/move`, { categoryId }, { graphRequired: true } as any)
+      .then(r => r.data),
   bulkMove: (req: BulkMoveRequest) =>
     http
-      .post<BulkMoveResponse>('/emails/bulk-move', req)
+      .post<BulkMoveResponse>('/emails/bulk-move', req, { graphRequired: true } as any)
       .then(r => r.data),
   feedback: (id: string, categoryId: string, autoMove: boolean = true) =>
     http
