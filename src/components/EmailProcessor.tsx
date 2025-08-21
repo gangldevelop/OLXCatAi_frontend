@@ -32,6 +32,7 @@ import {
 } from '@fluentui/react-icons';
 import { Email, Category } from '../types';
 import { emailService } from '../services/emailService';
+import { recentlyCategorizedStore } from '../stores/recentlyCategorized'
 
 const useStyles = makeStyles({
   container: {
@@ -353,7 +354,9 @@ const EmailProcessor: React.FC<EmailProcessorProps> = ({
             disabled={selectedEmails.size === 0 || !bulkTarget}
             onClick={async () => {
               if (!bulkTarget) return
-              await emailService.bulkMove(Array.from(selectedEmails), bulkTarget)
+              const messageIds = Array.from(selectedEmails)
+              await emailService.bulkMove({ messageIds, categoryId: bulkTarget })
+              recentlyCategorizedStore.mark(messageIds)
               setSelectedEmails(new Set())
               // Reflect changes in parent state so category column updates immediately
               const updatedEmails = emails.map(e => selectedEmails.has(e.id) ? { ...e, categoryId: bulkTarget, isProcessed: true } : e)

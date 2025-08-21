@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem, MenuDivider } from '@fluentui/react-components'
+import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem, MenuDivider, Checkbox, Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions } from '@fluentui/react-components'
 import { notifyInfo } from '../lib/notify'
 import { emailService } from '../services/emailService'
 import { Email } from '../types'
@@ -7,6 +7,9 @@ import { BackendEmailMessage } from '../types/email'
 import { mapBackendEmailToEmail } from '../lib/mappers'
 import { changeService } from '../services/changeService'
 import { withBackoff } from '../lib/backoff'
+import { useCategories } from '../hooks/useCategories'
+import { BulkMoveResponse } from '../types/bulkMove'
+import { recentlyCategorizedStore } from '../stores/recentlyCategorized'
 
 const useStyles = makeStyles({
   container: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, height: '100%', minHeight: 0, overflow: 'auto' },
@@ -34,6 +37,11 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
   const [debouncedQ, setDebouncedQ] = useState('')
   const [top, setTop] = useState(10)
   const [skip, setSkip] = useState(0)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [planOpen, setPlanOpen] = useState(false)
+  const [planLoading, setPlanLoading] = useState(false)
+  const [planResponse, setPlanResponse] = useState<BulkMoveResponse | null>(null)
+  const { categories } = useCategories()
 
   // Keep latest values to avoid stale closures inside the change subscription
   const latestQueryRef = useRef<string>('')
@@ -71,6 +79,7 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
       const hasRelevant = items?.some(it => it?.type === 'email:moved' || it?.type === 'email:bulk-moved')
       if (hasRelevant) {
         setSkip(0)
+        setSelectedIds(new Set())
         const run = async () => {
           // Try a few times in case backend cache (~10s) returns a stale page
           let attempts = 0
@@ -91,6 +100,56 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
   const nextPage = () => setSkip(s => s + top)
   const prevPage = () => setSkip(s => Math.max(0, s - top))
 
+  const toggleSelectAllCurrentPage = () => {
+    const pageIds = items.map(it => it.id)
+    const allSelected = pageIds.every(id => selectedIds.has(id))
+    if (allSelected) {
+      const newSet = new Set(selectedIds)
+      pageIds.forEach(id => newSet.delete(id))
+      setSelectedIds(newSet)
+    } else {
+      const newSet = new Set(selectedIds)
+      pageIds.forEach(id => newSet.add(id))
+      setSelectedIds(newSet)
+    }
+  }
+
+  const toggleSelectOne = (id: string) => {
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelectedIds(next)
+  }
+
+  const headerAllChecked = items.length > 0 && items.every(it => selectedIds.has(it.id))
+  const headerIndeterminate = items.some(it => selectedIds.has(it.id)) && !headerAllChecked
+
+  const openPredictivePlan = async () => {
+    const messageIds = Array.from(selectedIds)
+    if (messageIds.length === 0) return
+    setPlanLoading(true)
+    setPlanOpen(true)
+    try {
+      const resp = await emailService.bulkMove({ messageIds, dryRun: true })
+      setPlanResponse(resp)
+    } catch (e) {
+      setPlanResponse(null)
+    } finally {
+      setPlanLoading(false)
+    }
+  }
+
+  const executePredictive = async () => {
+    const messageIds = Array.from(selectedIds)
+    if (messageIds.length === 0) return
+    await emailService.bulkMove({ messageIds })
+    recentlyCategorizedStore.mark(messageIds)
+    setPlanOpen(false)
+    setPlanResponse(null)
+    setSelectedIds(new Set())
+    notifyInfo('Bulk move requested', 'Changes will appear shortly')
+  }
+
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -101,12 +160,16 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
         {!loading && (
           <Button size="small" appearance="secondary" onClick={() => { setSkip(0); fetchEmails(debouncedQ, top, 0); notifyInfo('Refreshed', 'Latest categorization applied'); }}>Refresh</Button>
         )}
+        <Button size="small" appearance="primary" disabled={selectedIds.size === 0} onClick={openPredictivePlan}>AI Categorize</Button>
       </div>
 
       <div className={styles.listWrap}>
         <Table className={styles.table}>
           <TableHeader>
             <TableRow>
+              <TableHeaderCell>
+                <Checkbox checked={headerAllChecked ? true : headerIndeterminate ? 'mixed' : false} onChange={toggleSelectAllCurrentPage} />
+              </TableHeaderCell>
               <TableHeaderCell>Subject</TableHeaderCell>
               <TableHeaderCell className={styles.narrowHide}>From</TableHeaderCell>
               <TableHeaderCell className={styles.narrowHide}>Date</TableHeaderCell>
@@ -116,6 +179,13 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
           <TableBody>
             {items.map(it => (
               <TableRow key={it.id} onClick={() => onSelect(it)} style={{ cursor: 'pointer' }}>
+                <TableCell>
+                  <Checkbox
+                    checked={selectedIds.has(it.id)}
+                    onClick={e => e.stopPropagation()}
+                    onChange={() => toggleSelectOne(it.id)}
+                  />
+                </TableCell>
                 <TableCell className={styles.subjectCell}>
                   <Tooltip content={it.subject} relationship="label">
                     <span className={styles.truncated}>{it.subject}</span>
@@ -157,7 +227,62 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
             </MenuList>
           </MenuPopover>
         </Menu>
+        
       </div>
+
+      <Dialog open={planOpen} onOpenChange={(_, d) => setPlanOpen(d.open)}>
+        <DialogSurface>
+          <DialogBody>
+            <DialogTitle>AI Categorization Plan</DialogTitle>
+            <DialogContent>
+              {planLoading && <Spinner size="tiny" />}
+              {!planLoading && planResponse && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+                    <Badge appearance="filled" size="small">Selected: {selectedIds.size}</Badge>
+                    <Badge appearance="filled" color="brand" size="small">To move: {planResponse.data.results.filter(r => r.ok).length}</Badge>
+                    <Badge appearance="filled" color="important" size="small">Skipped: {planResponse.data.results.filter(r => !r.ok).length}</Badge>
+                  </div>
+                  <div style={{ maxHeight: 280, overflow: 'auto', border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusSmall }}>
+                    <Table size="small" className={styles.table}>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHeaderCell>Subject</TableHeaderCell>
+                          <TableHeaderCell>Suggested Category</TableHeaderCell>
+                          <TableHeaderCell>Action</TableHeaderCell>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {planResponse.data.results.map(r => {
+                          const email = items.find(it => it.id === r.messageId)
+                          const catName = r.predictedCategoryId ? (categories.find(c => c.id === r.predictedCategoryId)?.name || r.predictedCategoryId) : '-'
+                          const action = r.ok ? 'Move' : `Skip (${r.reason || 'n/a'})`
+                          return (
+                            <TableRow key={r.messageId}>
+                              <TableCell>
+                                <span className={styles.truncated} title={email?.subject || r.messageId}>{email?.subject || r.messageId}</span>
+                              </TableCell>
+                              <TableCell>{catName}</TableCell>
+                              <TableCell>{action}</TableCell>
+                            </TableRow>
+                          )
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              )}
+              {!planLoading && !planResponse && (
+                <Text>Failed to fetch plan</Text>
+              )}
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" size="small" onClick={() => setPlanOpen(false)}>Close</Button>
+              <Button appearance="primary" size="small" onClick={executePredictive} disabled={!planResponse || planLoading}>Categorize</Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </div>
   )
 }

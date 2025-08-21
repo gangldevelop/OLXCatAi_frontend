@@ -1,6 +1,7 @@
 import { http } from '../lib/http'
 import { BackendEmailMessage } from '../types/email'
 import { withBackoff } from '../lib/backoff'
+import { BulkMoveRequest, BulkMoveResponse } from '../types/bulkMove'
 
 export const emailService = {
   list: (top?: number, skip?: number) =>
@@ -23,8 +24,10 @@ export const emailService = {
       .then(r => r.data.data?.predictions || []),
   move: (id: string, categoryId: string) =>
     http.post(`/emails/${encodeURIComponent(id)}/move`, { categoryId }).then(r => r.data),
-  bulkMove: (messageIds: string[], categoryId: string, batchSize?: number, concurrency?: number) =>
-    http.post('/emails/bulk-move', { messageIds, categoryId, batchSize, concurrency }).then(r => r.data),
+  bulkMove: (req: BulkMoveRequest) =>
+    http
+      .post<BulkMoveResponse>('/emails/bulk-move', req)
+      .then(r => r.data),
   feedback: (id: string, categoryId: string, autoMove: boolean = true) =>
     http
       .post(
