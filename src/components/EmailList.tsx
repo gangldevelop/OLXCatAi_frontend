@@ -1,9 +1,12 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem, MenuDivider } from '@fluentui/react-components'
+import { notifyInfo } from '../lib/notify'
 import { emailService } from '../services/emailService'
 import { Email } from '../types'
 import { BackendEmailMessage } from '../types/email'
 import { mapBackendEmailToEmail } from '../lib/mappers'
+import { changeService } from '../services/changeService'
+import { withBackoff } from '../lib/backoff'
 
 const useStyles = makeStyles({
   container: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, height: '100%', minHeight: 0, overflow: 'auto' },
@@ -29,25 +32,31 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
   const [error, setError] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
-  const [top, setTop] = useState(20)
+  const [top, setTop] = useState(10)
   const [skip, setSkip] = useState(0)
+
+  // Keep latest values to avoid stale closures inside the change subscription
+  const latestQueryRef = useRef<string>('')
+  const latestTopRef = useRef<number>(50)
+  useEffect(() => { latestQueryRef.current = debouncedQ }, [debouncedQ])
+  useEffect(() => { latestTopRef.current = top }, [top])
 
   useEffect(() => {
     const t = setTimeout(() => setDebouncedQ(q), 350)
     return () => clearTimeout(t)
   }, [q])
 
-  const load = async () => {
+  const fetchEmails = async (q: string, t: number, s: number) => {
     setLoading(true)
     setError(null)
     try {
-      if (debouncedQ) {
-        const data = await emailService.search(debouncedQ, top, skip)
-        setItems(data.map(mapToEmail))
-      } else {
-        const data = await emailService.list(top, skip)
-        setItems(data.map(mapToEmail))
-      }
+      const data = await withBackoff(async () => {
+        if (q) {
+          return emailService.search(q, t, s)
+        }
+        return emailService.list(t, s)
+      })
+      setItems(data.map(mapToEmail))
     } catch (e: any) {
       setError(e?.message || 'Failed to load emails')
     } finally {
@@ -55,7 +64,29 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
     }
   }
 
-  useEffect(() => { load() }, [debouncedQ, top, skip])
+  useEffect(() => { fetchEmails(debouncedQ, top, skip) }, [debouncedQ, top, skip])
+
+  useEffect(() => {
+    const unsubscribe = changeService.subscribe(items => {
+      const hasRelevant = items?.some(it => it?.type === 'email:moved' || it?.type === 'email:bulk-moved')
+      if (hasRelevant) {
+        setSkip(0)
+        const run = async () => {
+          // Try a few times in case backend cache (~10s) returns a stale page
+          let attempts = 0
+          while (attempts < 3) {
+            await fetchEmails(latestQueryRef.current, latestTopRef.current, 0)
+            attempts += 1
+            if (attempts < 3) await new Promise(r => setTimeout(r, 3000))
+          }
+        }
+        run()
+      }
+    })
+    return () => { unsubscribe() }
+    // Intentionally omit deps to keep a single subscription; we read latest values via parameters
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const nextPage = () => setSkip(s => s + top)
   const prevPage = () => setSkip(s => Math.max(0, s - top))
@@ -67,6 +98,9 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
         <Button size="small" onClick={() => { setSkip(0); setDebouncedQ(q) }}>Search</Button>
         {loading && <Spinner size="tiny" />}
         {error && <Text color="danger">{error}</Text>}
+        {!loading && (
+          <Button size="small" appearance="secondary" onClick={() => { setSkip(0); fetchEmails(debouncedQ, top, 0); notifyInfo('Refreshed', 'Latest categorization applied'); }}>Refresh</Button>
+        )}
       </div>
 
       <div className={styles.listWrap}>

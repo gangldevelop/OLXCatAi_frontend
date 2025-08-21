@@ -11,6 +11,7 @@ import {
   Spinner,
 } from '@fluentui/react-components';
 import { MailRegular, FolderRegular, CheckmarkRegular, PlayRegular } from '@fluentui/react-icons';
+import RecentlyCategorized from './RecentlyCategorized'
 import { Category, Email, CategoryStats } from '../types';
 import { useSubscriptions } from '../hooks/useSubscriptions';
 import { AuthStore } from '../stores/auth';
@@ -20,7 +21,6 @@ const useStyles = makeStyles({
     padding: tokens.spacingHorizontalM,
     height: '100%',
     minHeight: 0,
-    overflow: 'auto',
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacingVerticalS, flexWrap: 'wrap', gap: tokens.spacingVerticalS },
   statsGrid: {
@@ -202,7 +202,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className={styles.statDescription}>Emails in your inbox</div>
         </div>
 
-        <div className={styles.statCard}>
+        {/* <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <CheckmarkRegular />
             <Text weight="semibold">Processed</Text>
@@ -211,7 +211,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className={styles.statDescription}>
             {processingProgress.toFixed(1)}% complete
           </div>
-        </div>
+        </div> */}
 
         <div className={styles.statCard}>
           <div className={styles.statHeader}>
@@ -224,14 +224,14 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className={styles.statCard}>
+        {/* <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <FolderRegular />
             <Text weight="semibold">Active Categories</Text>
           </div>
           <div className={styles.statValue}>{activeCategories}</div>
           <div className={styles.statDescription}>Categories available</div>
-        </div>
+        </div> */}
       </div>
 
       <div className={styles.quickActions}>
@@ -262,43 +262,15 @@ const Dashboard: React.FC<DashboardProps> = ({
         </Card>
       </div>
 
-      <div className={styles.recentActivity}>
-        <div className={styles.activityHeader}>
-          <Text weight="semibold">Recent Activity</Text>
-        </div>
-        {recentEmails.length > 0 ? (
-          recentEmails.map((email) => (
-            <div key={email.id} className={styles.activityItem}>
-              <div className={styles.activityContent}>
-                <div>
-                  <Text weight="semibold" truncate style={{ maxWidth: '300px' }}>
-                    {email.subject}
-                  </Text>
-                  <Text size={200} color="neutral">{email.sender} • {email.receivedDate.toLocaleDateString()}</Text>
-                </div>
-                <div className={styles.categoryBadge}>
-                  <div
-                    className={styles.categoryColor}
-                    style={{ backgroundColor: getCategoryColor(email.categoryId, (email as any).parentFolderId) }}
-                  />
-                  <Badge
-                    appearance={email.isProcessed ? 'filled' : 'outline'}
-                    color={email.isProcessed ? 'success' : 'subtle'}
-                    size="small"
-                    style={{ fontSize: tokens.fontSizeBase100 }}
-                  >
-                    {email.isProcessed ? getCategoryName(email.categoryId, (email as any).parentFolderId) : 'Pending'}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-          ))
-        ) : (
-          <div className={styles.activityItem}>
-            <Text color="neutral">No recent emails to display</Text>
-          </div>
-        )}
-      </div>
+      <RecentlyCategorized
+        emails={emails}
+        categories={categories}
+        onEmailUpdated={(id, updates) => {
+          const existing = emails.find(e => e.id === id)
+          if (!existing) return
+          existing && (existing.categoryId !== updates.categoryId || existing.isProcessed !== updates.isProcessed) && (void 0)
+        }}
+      />
     </div>
   );
 };
