@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { Button, Dropdown, Option, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Badge, Input, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem } from '@fluentui/react-components'
 import { Email, Category } from '../types'
 import { emailService } from '../services/emailService'
+import { recentlyCategorizedStore } from '../stores/recentlyCategorized'
 import { notifyError, notifyInfo, notifySuccess } from '../lib/notify'
 import { EditRegular } from '@fluentui/react-icons'
 
@@ -37,12 +38,26 @@ const RecentlyCategorized: React.FC<Props> = ({ emails, categories, onEmailUpdat
   const items = useMemo(() => {
     const since = Date.now() - lookbackHours * 60 * 60 * 1000
     const data = emails
-      .filter(e => (e.categoryId || (e as any).parentFolderId) && e.receivedDate.getTime() >= since)
-      .sort((a, b) => b.receivedDate.getTime() - a.receivedDate.getTime())
+      .filter(e => (e.categoryId || (e as any).parentFolderId))
+      .map(e => {
+        const ts = recentlyCategorizedStore.getTimestampMs(e.id)
+        return { email: e, ts: ts ?? e.receivedDate.getTime() }
+      })
+      .filter(x => x.ts >= since)
+      .sort((a, b) => b.ts - a.ts)
+      .map(x => x.email)
     if (!debounced) return data
     const q = debounced.toLowerCase()
     return data.filter(e => e.subject.toLowerCase().includes(q) || e.sender.toLowerCase().includes(q))
   }, [emails, debounced, lookbackHours])
+
+  useEffect(() => {
+    const unsubscribe = recentlyCategorizedStore.onChange(() => {
+      // trigger recompute by updating local state without altering emails
+      setLoading(l => l)
+    })
+    return () => { unsubscribe() }
+  }, [])
 
   const getCategoryName = (categoryId?: string, parentFolderId?: string) => {
     let category = categoryId ? categories.find(c => c.id === categoryId) : undefined
