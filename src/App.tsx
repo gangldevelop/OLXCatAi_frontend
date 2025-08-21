@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles, tokens, Text, Badge, TabList, Tab, Button } from '@fluentui/react-components';
+import { makeStyles, tokens, Text, TabList, Tab, Button } from '@fluentui/react-components';
 import { HomeRegular, FolderRegular, PlayRegular, SettingsRegular, MailRegular } from '@fluentui/react-icons';
 import Dashboard from './components/Dashboard';
 import CategoryManager from './components/CategoryManager';

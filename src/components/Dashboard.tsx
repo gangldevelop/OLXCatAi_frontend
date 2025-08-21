@@ -202,7 +202,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className={styles.statDescription}>Emails in your inbox</div>
         </div>
 
-        <div className={styles.statCard}>
+        {/* <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <CheckmarkRegular />
             <Text weight="semibold">Processed</Text>
@@ -211,7 +211,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           <div className={styles.statDescription}>
             {processingProgress.toFixed(1)}% complete
           </div>
-        </div>
+        </div> */}
 
         <div className={styles.statCard}>
           <div className={styles.statHeader}>
@@ -224,14 +224,14 @@ const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
 
-        <div className={styles.statCard}>
+        {/* <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <FolderRegular />
             <Text weight="semibold">Active Categories</Text>
           </div>
           <div className={styles.statValue}>{activeCategories}</div>
           <div className={styles.statDescription}>Categories available</div>
-        </div>
+        </div> */}
       </div>
 
       <div className={styles.quickActions}>
