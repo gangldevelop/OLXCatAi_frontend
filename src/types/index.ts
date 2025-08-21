@@ -16,6 +16,7 @@ export interface Email {
   categoryId?: string;
   isProcessed: boolean;
   parentFolderId?: string;
+  categories?: string[];
 }
 
 export interface CategoryStats {

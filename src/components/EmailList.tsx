@@ -41,6 +41,7 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
   const [planOpen, setPlanOpen] = useState(false)
   const [planLoading, setPlanLoading] = useState(false)
   const [planResponse, setPlanResponse] = useState<BulkMoveResponse | null>(null)
+  const [minConfidence, setMinConfidence] = useState<number | undefined>(undefined)
   const { categories } = useCategories()
 
   // Keep latest values to avoid stale closures inside the change subscription
@@ -130,7 +131,7 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
     setPlanLoading(true)
     setPlanOpen(true)
     try {
-      const resp = await emailService.bulkMove({ messageIds, dryRun: true })
+      const resp = await emailService.bulkMove({ messageIds, dryRun: true, minConfidence })
       setPlanResponse(resp)
     } catch (e) {
       setPlanResponse(null)
@@ -142,8 +143,11 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
   const executePredictive = async () => {
     const messageIds = Array.from(selectedIds)
     if (messageIds.length === 0) return
-    await emailService.bulkMove({ messageIds })
-    recentlyCategorizedStore.mark(messageIds)
+    const resp = await emailService.bulkMove({ messageIds, dryRun: false, minConfidence })
+    try {
+      const movedIds = resp?.data?.results?.filter(r => r.ok)?.map(r => r.messageId) || []
+      if (movedIds.length > 0) recentlyCategorizedStore.mark(movedIds)
+    } catch {}
     setPlanOpen(false)
     setPlanResponse(null)
     setSelectedIds(new Set())
@@ -200,9 +204,17 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
                   <span>{it.receivedDate.toLocaleString()}</span>
                 </TableCell>
                 <TableCell>
-                  <Badge appearance="filled" color={it.isProcessed ? 'success' : 'subtle'} size="small">
-                    {it.isProcessed ? 'Read' : 'Unread'}
-                  </Badge>
+                  <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Badge appearance="filled" color={it.isProcessed ? 'success' : 'subtle'} size="small">
+                      {it.isProcessed ? 'Read' : 'Unread'}
+                    </Badge>
+                    {Array.isArray(it.categories) && it.categories.length > 0 && it.categories.slice(0, 3).map(label => (
+                      <Badge key={label} size="small" appearance="tint">{label}</Badge>
+                    ))}
+                    {Array.isArray(it.categories) && it.categories.length > 3 && (
+                      <Badge size="small" appearance="tint">+{it.categories.length - 3}</Badge>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -240,8 +252,8 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
                     <Badge appearance="filled" size="small">Selected: {selectedIds.size}</Badge>
-                    <Badge appearance="filled" color="brand" size="small">To move: {planResponse.data.results.filter(r => r.ok).length}</Badge>
-                    <Badge appearance="filled" color="important" size="small">Skipped: {planResponse.data.results.filter(r => !r.ok).length}</Badge>
+                    <Badge appearance="filled" color="brand" size="small">To move: {planResponse.data.results.filter(r => r.reason === 'dry_run').length}</Badge>
+                    <Badge appearance="filled" color="important" size="small">Skipped: {planResponse.data.results.filter(r => r.reason !== 'dry_run').length}</Badge>
                   </div>
                   <div style={{ maxHeight: 280, overflow: 'auto', border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusSmall }}>
                     <Table size="small" className={styles.table}>
@@ -256,7 +268,7 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
                         {planResponse.data.results.map(r => {
                           const email = items.find(it => it.id === r.messageId)
                           const catName = r.predictedCategoryId ? (categories.find(c => c.id === r.predictedCategoryId)?.name || r.predictedCategoryId) : '-'
-                          const action = r.ok ? 'Move' : `Skip (${r.reason || 'n/a'})`
+                          const action = r.reason === 'dry_run' ? 'Move' : `Skip (${r.reason || 'n/a'})`
                           return (
                             <TableRow key={r.messageId}>
                               <TableCell>

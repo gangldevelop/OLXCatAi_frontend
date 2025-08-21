@@ -22,6 +22,7 @@ export type BulkMoveResponse = {
     dryRun?: boolean
     minConfidence?: number
     categoryId?: string
+    planned?: { destinationFolderId: string; count: number; messageIds: string[] }
     results: BulkMoveResult[]
   }
 }
