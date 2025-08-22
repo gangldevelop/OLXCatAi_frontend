@@ -36,7 +36,7 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
   const [error, setError] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
-  const [top, setTop] = useState(20)
+  const [top, setTop] = useState(10)
   const [skip, setSkip] = useState(0)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [planOpen, setPlanOpen] = useState(false)
@@ -64,30 +64,57 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
     fetchEmails(latestQueryRef.current, latestTopRef.current, 0)
   }, [categoryFilter])
 
-  const fetchEmails = async (q: string, t: number, s: number) => {
+  const fetchEmails = async (q: string, t: number, s: number, signal?: AbortSignal) => {
     setLoading(true)
     setError(null)
     try {
-      const data = await withBackoff(async () => {
-        if (q) {
-          return emailService.search(q, t, s)
-        }
-        return emailService.list(t, s)
-      })
-      const mapped = data.map(mapToEmail)
-      // Apply optional category filter client-side to avoid API changes
-      const filtered = categoryFilter
-        ? mapped.filter(m => (categoryFilter.categoryId && m.categoryId === categoryFilter.categoryId) || (categoryFilter.folderId && m.parentFolderId === categoryFilter.folderId))
-        : mapped
-      setItems(filtered)
+      const fetchPage = async (topArg: number, skipArg: number) => {
+        const data = q
+          ? await emailService.search(q, topArg, skipArg, signal)
+          : await emailService.list(topArg, skipArg, signal)
+        return data.map(mapToEmail)
+      }
+
+      // If no category filter, just fetch a single page
+      if (!categoryFilter) {
+        const mapped = await fetchPage(t, s)
+        setItems(mapped)
+        return
+      }
+
+      // With a category filter, fetch a larger chunk once to avoid multiple round-trips
+      const CHUNK_MULTIPLIER = 5
+      const chunkTop = Math.min(250, t * CHUNK_MULTIPLIER)
+      const page1 = await fetchPage(chunkTop, s)
+      const f1 = page1.filter(m => (
+        (categoryFilter.categoryId && m.categoryId === categoryFilter.categoryId) ||
+        (categoryFilter.folderId && m.parentFolderId === categoryFilter.folderId)
+      ))
+      if (f1.length >= t || page1.length < chunkTop) {
+        setItems(f1.slice(0, t))
+        return
+      }
+      // Fallback: fetch one more chunk if needed
+      const page2 = await fetchPage(chunkTop, s + chunkTop)
+      const f2 = page2.filter(m => (
+        (categoryFilter.categoryId && m.categoryId === categoryFilter.categoryId) ||
+        (categoryFilter.folderId && m.parentFolderId === categoryFilter.folderId)
+      ))
+      const collected = f1.concat(f2)
+      setItems(collected.slice(0, t))
     } catch (e: any) {
-      setError(e?.message || 'Failed to load emails')
+      const isCanceled = e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED' || e?.message === 'canceled' || e?.cause?.name === 'AbortError'
+      if (!isCanceled) setError(e?.message || 'Failed to load emails')
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => { fetchEmails(debouncedQ, top, skip) }, [debouncedQ, top, skip, categoryFilter?.categoryId, categoryFilter?.folderId])
+  useEffect(() => {
+    const ac = new AbortController()
+    fetchEmails(debouncedQ, top, skip, ac.signal)
+    return () => { ac.abort() }
+  }, [debouncedQ, top, skip, categoryFilter?.categoryId, categoryFilter?.folderId])
 
   useEffect(() => {
     const unsubscribe = changeService.subscribe(items => {
