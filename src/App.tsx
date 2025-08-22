@@ -122,6 +122,7 @@ const App: React.FC = () => {
   const styles = useStyles();
   const [selectedTab, setSelectedTab] = useState<string>('home');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [emailsCategoryFilter, setEmailsCategoryFilter] = useState<{ categoryId?: string; folderId?: string } | null>(null)
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
   
   const { categories, addCategory, updateCategory, deleteCategory, toggleCategoryActive, importFromOutlook } = useCategories();
@@ -134,11 +135,18 @@ const App: React.FC = () => {
   }, [])
 
   const handleTabSelect = (tab: string) => {
+    if (tab === 'emails') {
+      setEmailsCategoryFilter(null);
+    }
     setSelectedTab(tab);
     setIsMenuOpen(false);
   };
 
-  const handleNavigate = (section: string) => {
+  const handleNavigate = (section: string, options?: { filterCategoryId?: string; filterFolderId?: string }) => {
+    if (section === 'emails') {
+      setEmailsCategoryFilter({ categoryId: options?.filterCategoryId, folderId: options?.filterFolderId });
+      setSelectedEmail(null);
+    }
     setSelectedTab(section);
   };
 
@@ -233,7 +241,7 @@ const App: React.FC = () => {
             }}
           />
         ) : (
-          <EmailList onSelect={(e) => setSelectedEmail(e)} />
+          <EmailList onSelect={(e) => setSelectedEmail(e)} categoryFilter={emailsCategoryFilter || undefined} />
         )
       case 'monitoring':
         return (
