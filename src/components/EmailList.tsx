@@ -15,8 +15,8 @@ const useStyles = makeStyles({
   container: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, height: '100%', minHeight: 0, overflow: 'auto' },
   header: { display: 'flex', gap: tokens.spacingHorizontalS, alignItems: 'center', flexWrap: 'wrap' },
   listWrap: { flex: 1, overflow: 'auto', border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium },
-  table: { minWidth: '360px', tableLayout: 'fixed' },
-  subjectCell: { width: '52%' },
+  table: { minWidth: '320px', tableLayout: 'fixed' },
+  subjectCell: { width: '60%' },
   truncated: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' },
   pager: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
   narrowHide: { '@media (max-width: 420px)': { display: 'none' } },
@@ -162,13 +162,13 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
         {loading && <Spinner size="tiny" />}
         {error && <Text color="danger">{error}</Text>}
         {!loading && (
-          <Button size="small" appearance="secondary" onClick={() => { setSkip(0); fetchEmails(debouncedQ, top, 0); notifyInfo('Refreshed', 'Latest categorization applied'); }}>Refresh</Button>
+          <Button className={styles.narrowHide} size="small" appearance="secondary" onClick={() => { setSkip(0); fetchEmails(debouncedQ, top, 0); notifyInfo('Refreshed', 'Latest categorization applied'); }}>Refresh</Button>
         )}
         <Button size="small" appearance="primary" disabled={selectedIds.size === 0} onClick={openPredictivePlan}>AI Categorize</Button>
       </div>
 
       <div className={styles.listWrap}>
-        <Table className={styles.table}>
+        <Table size="small" className={styles.table}>
           <TableHeader>
             <TableRow>
               <TableHeaderCell>
@@ -177,7 +177,7 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
               <TableHeaderCell>Subject</TableHeaderCell>
               <TableHeaderCell className={styles.narrowHide}>From</TableHeaderCell>
               <TableHeaderCell className={styles.narrowHide}>Date</TableHeaderCell>
-              <TableHeaderCell>Status</TableHeaderCell>
+              <TableHeaderCell>St</TableHeaderCell>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -206,7 +206,7 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
                 <TableCell>
                   <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Badge appearance="filled" color={it.isProcessed ? 'success' : 'subtle'} size="small">
-                      {it.isProcessed ? 'Read' : 'Unread'}
+                      {it.isProcessed ? 'Done' : 'New'}
                     </Badge>
                     {Array.isArray(it.categories) && it.categories.length > 0 && it.categories.slice(0, 3).map(label => (
                       <Badge key={label} size="small" appearance="tint">{label}</Badge>
@@ -223,23 +223,14 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
       </div>
 
       <div className={styles.pager}>
-        <Text size={100}>Pg {Math.floor(skip / top) + 1}</Text>
-        <Menu>
-          <MenuTrigger>
-            <MenuButton size="small" appearance="secondary">Actions</MenuButton>
-          </MenuTrigger>
-          <MenuPopover>
-            <MenuList>
-              <MenuItem onClick={prevPage} disabled={skip === 0}>Previous Page</MenuItem>
-              <MenuItem onClick={nextPage}>Next Page</MenuItem>
-              <MenuDivider />
-              <MenuItem onClick={() => { setTop(10); setSkip(0) }}>10 / page</MenuItem>
-              <MenuItem onClick={() => { setTop(20); setSkip(0) }}>20 / page</MenuItem>
-              <MenuItem onClick={() => { setTop(50); setSkip(0) }}>50 / page</MenuItem>
-            </MenuList>
-          </MenuPopover>
-        </Menu>
-        
+        <Button size="small" onClick={prevPage} disabled={skip === 0}>Previous</Button>
+        <Text size={100}>Page {Math.floor(skip / top) + 1}</Text>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Button size="small" appearance={top === 10 ? 'primary' : 'secondary'} onClick={() => { setTop(10); setSkip(0) }}>10</Button>
+          <Button size="small" appearance={top === 20 ? 'primary' : 'secondary'} onClick={() => { setTop(20); setSkip(0) }}>20</Button>
+          <Button size="small" appearance={top === 50 ? 'primary' : 'secondary'} onClick={() => { setTop(50); setSkip(0) }}>50</Button>
+        </div>
+        <Button size="small" onClick={nextPage}>Next</Button>
       </div>
 
       <Dialog open={planOpen} onOpenChange={(_, d) => setPlanOpen(d.open)}>

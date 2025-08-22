@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { makeStyles, tokens, Text, TabList, Tab, Button } from '@fluentui/react-components';
-import { HomeRegular, FolderRegular, PlayRegular, SettingsRegular, MailRegular } from '@fluentui/react-icons';
+import { HomeRegular, FolderRegular, SettingsRegular, MailRegular } from '@fluentui/react-icons';
 import Dashboard from './components/Dashboard';
 import CategoryManager from './components/CategoryManager';
-import EmailProcessor from './components/EmailProcessor';
 import EmailList from './components/EmailList';
 import EmailDetail from './components/EmailDetail';
 import Settings from './components/Settings';
@@ -174,8 +173,6 @@ const App: React.FC = () => {
         return 'Emails';
       case 'categories':
         return 'Category Manager';
-      case 'processing':
-        return 'Email Processing';
       case 'monitoring':
         return 'Email Monitoring';
       case 'settings':
@@ -193,8 +190,6 @@ const App: React.FC = () => {
         return <MailRegular />;
       case 'categories':
         return <FolderRegular />;
-      case 'processing':
-        return <PlayRegular />;
       case 'monitoring':
         return <MailRegular />;
       case 'settings':
@@ -240,16 +235,6 @@ const App: React.FC = () => {
         ) : (
           <EmailList onSelect={(e) => setSelectedEmail(e)} />
         )
-      case 'processing':
-        return (
-          <EmailProcessor
-            emails={emails}
-            categories={categories}
-            onEmailUpdate={handleEmailUpdate}
-            onMarkAsProcessed={markAsProcessed}
-            onAssignCategory={assignCategory}
-          />
-        );
       case 'monitoring':
         return (
           <div style={{ padding: tokens.spacingHorizontalL }}>

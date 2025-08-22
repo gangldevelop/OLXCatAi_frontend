@@ -48,6 +48,47 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalS,
     flexWrap: 'wrap',
   },
+  categorySection: {
+    border: `1px solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground1,
+    marginBottom: tokens.spacingVerticalM,
+    overflow: 'hidden',
+  },
+  categoryHeader: {
+    padding: tokens.spacingHorizontalM,
+    backgroundColor: tokens.colorNeutralBackground2,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
+  },
+  categoryList: {
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: '180px',
+    overflowY: 'auto',
+  },
+  categoryItem: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
+    padding: tokens.spacingHorizontalM,
+    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    cursor: 'pointer',
+    '&:last-child': { borderBottom: 'none' },
+    '&:hover': { backgroundColor: tokens.colorNeutralBackground2 },
+  },
+  categoryMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: tokens.spacingHorizontalS,
+    minWidth: 0,
+  },
+  categoryDot: { width: '8px', height: '8px', borderRadius: '50%' },
+  categoryName: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   statCard: {
     padding: tokens.spacingHorizontalS,
     border: `1px solid ${tokens.colorNeutralStroke1}`,
@@ -188,9 +229,6 @@ const Dashboard: React.FC<DashboardProps> = ({
           <Text size={200} color="neutral">Sign in to Outlook to enable monitoring</Text>
         )}
       </div>
-      <div className={styles.header}>
-        <h2>Home</h2>
-      </div>
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
@@ -234,33 +272,28 @@ const Dashboard: React.FC<DashboardProps> = ({
         </div> */}
       </div>
 
-      <div className={styles.quickActions}>
-        <Card className={styles.actionCard} onClick={() => onNavigate('categories')}>
-          <CardHeader
-            image={<FolderRegular />}
-            header={<Text weight="semibold">Manage Categories</Text>}
-          />
-          <CardPreview>
-            <Text size={200} color="neutral">
-              Create and organize email categories
-            </Text>
-          </CardPreview>
-        </Card>
-
-        <Card className={styles.actionCard} onClick={() => onNavigate('processing')}>
-          <CardHeader
-            image={<PlayRegular />}
-            header={<Text weight="semibold">Process Emails</Text>}
-          />
-          <CardPreview>
-            <Text size={200} color="neutral">
-              {unprocessedEmails > 0
-                ? `${unprocessedEmails} emails ready to process`
-                : 'All emails processed'}
-            </Text>
-          </CardPreview>
-        </Card>
+      <div className={styles.categorySection}>
+        <div className={styles.categoryHeader}>
+          <Text weight="semibold">Categories</Text>
+          <Button size="small" appearance="secondary" onClick={() => onNavigate('categories')}>Manage</Button>
+        </div>
+        <div className={styles.categoryList}>
+          {categories.map(cat => {
+            const count = emails.filter(e => e.categoryId === cat.id || e.parentFolderId === cat.outlookFolderId).length;
+            return (
+              <div key={cat.id} className={styles.categoryItem} onClick={() => onNavigate('emails')}>
+                <div className={styles.categoryMeta}>
+                  <div className={styles.categoryDot} style={{ backgroundColor: cat.color || tokens.colorNeutralForeground3 }} />
+                  <span className={styles.categoryName} title={cat.name}>{cat.name}</span>
+                </div>
+                <Badge appearance="filled" size="small">{count}</Badge>
+              </div>
+            );
+          })}
+        </div>
       </div>
+
+      {/* Quick actions removed as processing is handled in Emails tab */}
 
       <RecentlyCategorized
         emails={emails}

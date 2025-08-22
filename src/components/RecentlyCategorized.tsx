@@ -9,7 +9,7 @@ import { EditRegular } from '@fluentui/react-icons'
 const useStyles = makeStyles({
   container: { padding: tokens.spacingHorizontalM, border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground1 },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacingVerticalS, gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
-  listWrap: { overflowX: 'auto', overflowY: 'hidden' },
+  listWrap: { overflowX: 'auto', overflowY: 'auto', maxHeight: '220px' },
   table: { minWidth: '280px', tableLayout: 'fixed' },
   subjectCell: { width: 'auto' },
   truncated: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' },
@@ -115,7 +115,7 @@ const RecentlyCategorized: React.FC<Props> = ({ emails, categories, onEmailUpdat
       </div>
 
       <div className={styles.listWrap}>
-        <Table className={styles.table}>
+        <Table size="small" className={styles.table}>
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Subject</TableHeaderCell>
