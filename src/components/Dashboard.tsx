@@ -169,7 +169,7 @@ const useStyles = makeStyles({
 interface DashboardProps {
   emails: Email[];
   categories: Category[];
-  onNavigate: (section: string) => void;
+  onNavigate: (section: string, options?: { filterCategoryId?: string; filterFolderId?: string }) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -281,7 +281,11 @@ const Dashboard: React.FC<DashboardProps> = ({
           {categories.map(cat => {
             const count = emails.filter(e => e.categoryId === cat.id || e.parentFolderId === cat.outlookFolderId).length;
             return (
-              <div key={cat.id} className={styles.categoryItem} onClick={() => onNavigate('emails')}>
+              <div
+                key={cat.id}
+                className={styles.categoryItem}
+                onClick={() => onNavigate('emails', { filterCategoryId: cat.id, filterFolderId: (cat as any).outlookFolderId || undefined })}
+              >
                 <div className={styles.categoryMeta}>
                   <div className={styles.categoryDot} style={{ backgroundColor: cat.color || tokens.colorNeutralForeground3 }} />
                   <span className={styles.categoryName} title={cat.name}>{cat.name}</span>

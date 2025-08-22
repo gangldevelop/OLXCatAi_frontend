@@ -24,18 +24,19 @@ const useStyles = makeStyles({
 
 type Props = {
   onSelect: (email: Email) => void
+  categoryFilter?: { categoryId?: string; folderId?: string }
 }
 
 const mapToEmail = (m: BackendEmailMessage): Email => mapBackendEmailToEmail(m)
 
-const EmailList: React.FC<Props> = ({ onSelect }) => {
+const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
   const styles = useStyles()
   const [items, setItems] = useState<Email[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [q, setQ] = useState('')
   const [debouncedQ, setDebouncedQ] = useState('')
-  const [top, setTop] = useState(10)
+  const [top, setTop] = useState(20)
   const [skip, setSkip] = useState(0)
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [planOpen, setPlanOpen] = useState(false)
@@ -55,6 +56,14 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
     return () => clearTimeout(t)
   }, [q])
 
+  // If a category filter is provided, reset paging and fetch with the filter applied
+  useEffect(() => {
+    if (!categoryFilter) return
+    setSkip(0)
+    // re-fetch with current debounced query + filter applied client-side post-fetch
+    fetchEmails(latestQueryRef.current, latestTopRef.current, 0)
+  }, [categoryFilter])
+
   const fetchEmails = async (q: string, t: number, s: number) => {
     setLoading(true)
     setError(null)
@@ -65,7 +74,12 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
         }
         return emailService.list(t, s)
       })
-      setItems(data.map(mapToEmail))
+      const mapped = data.map(mapToEmail)
+      // Apply optional category filter client-side to avoid API changes
+      const filtered = categoryFilter
+        ? mapped.filter(m => (categoryFilter.categoryId && m.categoryId === categoryFilter.categoryId) || (categoryFilter.folderId && m.parentFolderId === categoryFilter.folderId))
+        : mapped
+      setItems(filtered)
     } catch (e: any) {
       setError(e?.message || 'Failed to load emails')
     } finally {
@@ -73,7 +87,7 @@ const EmailList: React.FC<Props> = ({ onSelect }) => {
     }
   }
 
-  useEffect(() => { fetchEmails(debouncedQ, top, skip) }, [debouncedQ, top, skip])
+  useEffect(() => { fetchEmails(debouncedQ, top, skip) }, [debouncedQ, top, skip, categoryFilter?.categoryId, categoryFilter?.folderId])
 
   useEffect(() => {
     const unsubscribe = changeService.subscribe(items => {
