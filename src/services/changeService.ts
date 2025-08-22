@@ -31,6 +31,7 @@ class ChangeService {
   private aborted = false
   private currentVersion: number = -1
   private backoffMs: number = 0
+  private visListener?: () => void
 
   constructor() {
     const saved = sessionStorage.getItem('changes_version')
@@ -82,9 +83,25 @@ class ChangeService {
     }
 
     if (response.status === 429) {
-      // Exponential backoff up to 15s
-      this.backoffMs = this.backoffMs ? Math.min(this.backoffMs * 2, 15000) : 1000
-      await this.delay(this.backoffMs)
+      // Respect Retry-After header when present
+      const retryAfterHeader: string | undefined = (response.headers as any)['retry-after'] || (response.headers as any)['Retry-After']
+      const computeRetryAfterMs = (): number | undefined => {
+        if (!retryAfterHeader) return undefined
+        const seconds = Number(retryAfterHeader)
+        if (!Number.isNaN(seconds)) return Math.max(0, seconds * 1000)
+        const date = new Date(retryAfterHeader)
+        const ms = date.getTime() - Date.now()
+        return Number.isFinite(ms) ? Math.max(0, ms) : undefined
+      }
+      const retryAfterMs = computeRetryAfterMs()
+      if (typeof retryAfterMs === 'number') {
+        await this.delay(retryAfterMs)
+      } else {
+        // Exponential backoff up to 15s with light jitter
+        this.backoffMs = this.backoffMs ? Math.min(this.backoffMs * 2, 15000) : 1000
+        const jitter = this.backoffMs * 0.2 * (Math.random() * 2 - 1)
+        await this.delay(Math.max(0, Math.round(this.backoffMs + jitter)))
+      }
       return 'again'
     }
 
@@ -107,6 +124,15 @@ class ChangeService {
     this.running = true
     this.aborted = false
     while (!this.aborted) {
+      // If there are no listeners, stop
+      if (this.listeners.size === 0) {
+        break
+      }
+      // Pause polling in background to reduce server load
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
+        await this.delay(2000)
+        continue
+      }
       try {
         await this.pollOnce(25000)
       } catch (e) {
@@ -125,10 +151,23 @@ class ChangeService {
   start() {
     if (this.running) return
     this.loop()
+    // watch visibility changes
+    if (typeof document !== 'undefined' && !this.visListener) {
+      this.visListener = () => {
+        if (!this.running && this.listeners.size > 0 && document.visibilityState === 'visible') {
+          this.loop()
+        }
+      }
+      document.addEventListener('visibilitychange', this.visListener)
+    }
   }
 
   stop() {
     this.aborted = true
+    if (this.listeners.size === 0 && this.visListener) {
+      document.removeEventListener('visibilitychange', this.visListener)
+      this.visListener = undefined
+    }
   }
 }
 
