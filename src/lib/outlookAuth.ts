@@ -1,4 +1,5 @@
 import { http } from './http'
+import { APP_ORIGIN } from '../config/env'
 import { AuthStore, AuthUser } from '../stores/auth'
 
 type CallbackResult = {
@@ -17,7 +18,7 @@ const openDialog = (url: string): Promise<CallbackResult> => {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== 'olxcat_auth_result' || !e.newValue) return
       try {
-        const payload: CallbackResult = JSON.parse(e.newValue)
+        const payload = JSON.parse(e.newValue)
         localStorage.removeItem('olxcat_auth_result')
         resolved = true
         cleanup()
@@ -27,10 +28,10 @@ const openDialog = (url: string): Promise<CallbackResult> => {
     const onMessage = (event: MessageEvent) => {
       try {
         const data = typeof event.data === 'string' ? JSON.parse(event.data) : event.data
-        if (data && data.success && data.token && data.graphToken && data.user) {
+        if (data && data.success && data.token) {
           resolved = true
           cleanup()
-          resolve(data as CallbackResult)
+          resolve(data as any)
         }
       } catch {}
     }
@@ -43,32 +44,71 @@ const openDialog = (url: string): Promise<CallbackResult> => {
     }
     window.addEventListener('storage', onStorage)
     window.addEventListener('message', onMessage)
-    if (window.Office?.context?.ui?.displayDialogAsync) {
+    // Prefer Office dialog when available so auth stays as an Office modal and auto-closes
+    const openOfficeDialog = () => {
       window.Office.context.ui.displayDialogAsync(
         url,
-        { height: 50, width: 50, displayInIframe: true },
-        (result: any) => {
-          const dialog = result.value
+        {
+          height: 60,
+          width: 40,
+          requireHTTPS: true,
+          displayInIframe:
+            window.Office?.context?.platform === (window.Office as any)?.PlatformType?.OfficeOnline ? true : false,
+        },
+        (asyncResult: any) => {
+          const dialog = asyncResult?.value
           if (!dialog) {
             reject(new Error('Unable to open dialog'))
             return
           }
-          const handler = (arg: any) => {
+          let officeDialogResolved = false
+          // Safety timeout in case the dialog never posts a message
+          const officeTimeout = setTimeout(() => {
+            if (!officeDialogResolved) {
+              try { dialog.close() } catch {}
+              reject(new Error('Login timed out'))
+            }
+          }, 120000)
+
+          const messageHandler = (arg: any) => {
             try {
               const payload: CallbackResult = JSON.parse(arg.message)
-              dialog.close()
+              officeDialogResolved = true
+              clearTimeout(officeTimeout)
+              try { dialog.close() } catch {}
               resolve(payload)
             } catch {
-              dialog.close()
+              officeDialogResolved = true
+              clearTimeout(officeTimeout)
+              try { dialog.close() } catch {}
               reject(new Error('Invalid auth response'))
             }
           }
-          dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, handler)
+          const eventHandler = (arg: any) => {
+            // Dialog closed by user or host without a message
+            if (!officeDialogResolved) {
+              clearTimeout(officeTimeout)
+              reject(new Error('Login window closed'))
+            }
+          }
+          dialog.addEventHandler(window.Office.EventType.DialogMessageReceived, messageHandler)
+          if (window.Office.EventType.DialogEventReceived) {
+            dialog.addEventHandler(window.Office.EventType.DialogEventReceived, eventHandler)
+          }
         }
       )
+    }
+
+    if (window.Office && typeof window.Office.onReady === 'function') {
+      window.Office.onReady(() => openOfficeDialog())
+      return
+    }
+    if (window.Office?.context?.ui?.displayDialogAsync) {
+      openOfficeDialog()
       return
     }
 
+    // Fallback to a real popup if Office dialog API isn't available
     popup = window.open(url, 'olxcat_auth', 'width=600,height=700')
     if (!popup) {
       reject(new Error('Unable to open login window'))
@@ -105,12 +145,13 @@ export const ensureTokens = async () => {
   if (!AuthStore.getState().jwt) {
     const { data } = await http.get<{ authUrl: string }>('/auth/login', { omitGraphToken: true } as any)
     const redirectUrl = new URL(data.authUrl)
+    // Respect backend-provided redirect_uri (it must match Azure AD). If missing, default to our public origin.
     if (!redirectUrl.searchParams.get('redirect_uri')) {
-      redirectUrl.searchParams.set('redirect_uri', `${window.location.origin}/auth-callback.html`)
+      redirectUrl.searchParams.set('redirect_uri', `${APP_ORIGIN}/auth-callback.html`)
     }
     const result = await openDialog(redirectUrl.toString())
-    if (!result?.success) throw new Error('Authentication failed')
-    AuthStore.setAll({ jwt: result.token, graphToken: result.graphToken, user: result.user })
+    if (!result?.success || !result?.token) throw new Error('Authentication failed')
+    AuthStore.setAll({ jwt: result.token, graphToken: result.graphToken ?? null, user: result.user ?? null })
   }
 
   return AuthStore.getState()

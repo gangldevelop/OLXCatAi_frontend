@@ -1,43 +1,72 @@
 export const testOfficeIntegration = () => {
-  if (typeof window !== 'undefined' && window.Office) {
-    console.log('Office.js is available');
-    
-    if (window.Office.context) {
-      console.log('Office context is available');
-      
-      if (window.Office.context.diagnostics) {
-        console.log('Office version:', window.Office.context.diagnostics.version);
-      }
-      
-      if (window.Office.context.host) {
-        console.log('Office host:', window.Office.context.host);
-        
-        if (window.Office.context.host === window.Office.HostType?.Outlook) {
-          console.log('Running in Outlook environment');
-          
-          if (window.Office.context.mailbox) {
-            console.log('Mailbox is available');
-            
-            window.Office.context.mailbox.item.getAsync(
-              window.Office.CoercionType?.Text || 'text', 
-              (result: any) => {
-                if (result.status === window.Office.AsyncResultStatus?.Succeeded || result.status === 'succeeded') {
-                  console.log('Email content retrieved successfully');
-                } else {
-                  console.error('Failed to get email content:', result.error);
-                }
-              }
-            );
-          }
-        }
-      }
-    }
-  } else {
-    console.log('Office.js not available');
+  if (typeof window === 'undefined') {
+    return;
   }
 
-  if (typeof window !== 'undefined' && (window as any).OLXCatAI) {
-    console.log('OLXCatAI functions available:', Object.keys(window.OLXCatAI));
+  if (!window.Office) {
+    console.warn('Office.js not available');
+    return;
+  }
+
+  window.Office.onReady((info?: any) => {
+    try {
+      const context = window.Office?.context;
+      console.log('Office is ready. Host:', context?.host);
+
+      const diagnosticsVersion = context?.diagnostics?.version;
+      if (diagnosticsVersion) {
+        console.log('Office version:', diagnosticsVersion);
+      }
+
+      if (context?.host === window.Office?.HostType?.Outlook) {
+        console.log('Running in Outlook environment');
+
+        const mailbox = context?.mailbox;
+        if (!mailbox) {
+          console.warn('Mailbox not available');
+          return;
+        }
+
+        const item = mailbox.item as any;
+        if (!item) {
+          console.warn('Mailbox item not available');
+          return;
+        }
+
+        // Subject handling differs by mode. In Read mode, subject is a string; in Compose, it has getAsync.
+        const subjectValue = typeof item.subject === 'string' ? item.subject : undefined;
+        if (subjectValue) {
+          console.log('Subject (read mode):', subjectValue);
+        } else if (item.subject?.getAsync) {
+          item.subject.getAsync((subjectResult: any) => {
+            if (subjectResult?.status === window.Office?.AsyncResultStatus?.Succeeded || subjectResult?.status === 'succeeded') {
+              console.log('Subject (compose mode):', subjectResult.value);
+            } else {
+              console.warn('Failed to get subject:', subjectResult?.error);
+            }
+          });
+        }
+
+        // Body retrieval using body.getAsync is supported in both modes
+        if (item.body?.getAsync) {
+          item.body.getAsync(window.Office?.CoercionType?.Text || 'text', (result: any) => {
+            if (result?.status === window.Office?.AsyncResultStatus?.Succeeded || result?.status === 'succeeded') {
+              console.log('Email body (text) retrieved successfully');
+            } else {
+              console.error('Failed to get email body:', result?.error);
+            }
+          });
+        } else {
+          console.warn('item.body.getAsync not available');
+        }
+      }
+    } catch (error) {
+      console.error('Error during Office integration test:', error);
+    }
+  });
+
+  if ((window as any).OLXCatAI) {
+    console.log('OLXCatAI functions available:', Object.keys((window as any).OLXCatAI));
   } else {
     console.log('OLXCatAI functions not available');
   }

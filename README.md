@@ -48,7 +48,7 @@ npm run build
 Set via `.env` or environment variables:
 - `REACT_APP_API_BASE_URL`: Base URL for the backend API.
   - Defaults to `/api` in development (proxied to `http://localhost:3000`) and `http://localhost:3000/api` in production if not set.
-- `REACT_APP_APP_ORIGIN`: Public origin of the app (used in auth callback URLs). Default: `http://localhost:3000`.
+- `REACT_APP_APP_ORIGIN`: Public origin used in auth callbacks. Set to `https://localhost:3001` in development; fallback default for non-browser contexts is `http://localhost:3000`.
 
 Example `.env.development.local`:
 ```
