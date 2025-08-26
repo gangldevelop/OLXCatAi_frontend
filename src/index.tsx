@@ -24,10 +24,10 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const Root: React.FC = () => {
-  const [authed, setAuthed] = React.useState(!!(AuthStore.getState().jwt && AuthStore.getState().graphToken))
+  const [authed, setAuthed] = React.useState(!!AuthStore.getState().jwt)
 
   React.useEffect(() => {
-    const unsub = AuthStore.subscribe(s => setAuthed(!!(s.jwt && s.graphToken)))
+    const unsub = AuthStore.subscribe(s => setAuthed(!!s.jwt))
     return unsub
   }, [])
 

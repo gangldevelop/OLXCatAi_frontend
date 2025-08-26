@@ -11,32 +11,51 @@
       (async function () {
         try {
           const hash = window.location.hash ? window.location.hash.substring(1) : '';
+          const search = window.location.search ? window.location.search.substring(1) : '';
           const hp = new URLSearchParams(hash);
-          const token = hp.get('token');
-          const graphToken = hp.get('graphToken');
-          const userRaw = hp.get('user');
+          const qp = new URLSearchParams(search);
+          const token = hp.get('token') || qp.get('token');
+          const graphToken = hp.get('graphToken') || qp.get('graphToken');
+          const userRaw = hp.get('user') || qp.get('user');
           let user = null;
           try { user = userRaw ? JSON.parse(decodeURIComponent(userRaw)) : null } catch { try { user = userRaw ? JSON.parse(userRaw) : null } catch { try { user = userRaw ? JSON.parse(atob(userRaw)) : null } catch {} } }
-          const payload = token && graphToken && user ? { success: true, token, graphToken, user } : { success: false };
+          const payload = token ? { success: true, token, graphToken: graphToken || null, user: user || null } : { success: false };
           try { localStorage.setItem('olxcat_auth_result', JSON.stringify(payload)); } catch {}
           const msg = JSON.stringify(payload);
-          if (window.Office && Office.context && Office.context.ui && Office.context.ui.messageParent) {
-            Office.onReady(() => { Office.context.ui.messageParent(msg); window.close(); });
+          const trySendToOffice = () => {
+            try {
+              if (window.Office && Office.context && Office.context.ui && Office.context.ui.messageParent) {
+                try { Office.context.ui.messageParent(msg); } catch {}
+                try { window.close(); } catch {}
+                return true;
+              }
+            } catch {}
+            return false;
+          }
+
+          if (window.Office && typeof Office.onReady === 'function') {
+            Office.onReady(() => { if (!trySendToOffice()) { setTimeout(() => { trySendToOffice() || (window.opener ? (window.opener.postMessage(msg, '*'), window.close()) : (document.body.textContent = 'You can close this window.')); }, 100); } });
+          } else if (window.Office && typeof Office.initialize !== 'undefined') {
+            Office.initialize = () => { if (!trySendToOffice()) { setTimeout(() => { trySendToOffice() || (window.opener ? (window.opener.postMessage(msg, '*'), window.close()) : (document.body.textContent = 'You can close this window.')); }, 100); } };
           } else if (window.opener) {
             window.opener.postMessage(msg, '*');
-            window.close();
+            setTimeout(() => { try { window.close(); } catch {} }, 100);
           } else {
             document.body.textContent = 'You can close this window.';
           }
         } catch (e) {
           const msg = JSON.stringify({ success: false, error: { message: 'Callback error' } });
           try {
-            if (window.Office && Office.context && Office.context.ui && Office.context.ui.messageParent) {
-              Office.onReady(() => { Office.context.ui.messageParent(msg); window.close(); });
+            if (window.Office && typeof Office.onReady === 'function' && Office.context && Office.context.ui && Office.context.ui.messageParent) {
+              Office.onReady(() => { try { Office.context.ui.messageParent(msg); } catch {} try { window.close(); } catch {} });
+              return;
+            }
+            if (window.Office && typeof Office.initialize !== 'undefined') {
+              Office.initialize = () => { try { if (Office.context && Office.context.ui && Office.context.ui.messageParent) { Office.context.ui.messageParent(msg); } } catch {} try { window.close(); } catch {} };
               return;
             }
           } catch {}
-          try { if (window.opener) { window.opener.postMessage(msg, '*'); window.close(); return; } } catch {}
+          try { if (window.opener) { window.opener.postMessage(msg, '*'); setTimeout(() => { try { window.close(); } catch {} }, 100); return; } } catch {}
           document.body.textContent = 'Authentication failed; you may close this window.';
         }
       })();

@@ -32,6 +32,7 @@ npm start
 ```
 
 The app will run on `https://localhost:3000` (HTTPS is required for Add-In testing).
+The app will run on `https://localhost:3001` (HTTPS is required for Add-In testing).
 
 ### 3. Configure HTTPS for Development
 
@@ -191,12 +192,14 @@ Create `.env` files for different environments:
 
 ```bash
 # .env.development
-REACT_APP_API_URL=https://localhost:3000
-REACT_APP_OFFICE_ENV=development
+# Frontend origin (used by auth callbacks etc.)
+REACT_APP_APP_ORIGIN=https://localhost:3001
+# Backend API base (frontend uses CRA proxy when set to "/api")
+REACT_APP_API_BASE_URL=/api
 
 # .env.production
-REACT_APP_API_URL=https://your-api-domain.com
-REACT_APP_OFFICE_ENV=production
+REACT_APP_APP_ORIGIN=https://your-frontend-domain.com
+REACT_APP_API_BASE_URL=https://your-api-domain.com/api
 ```
 
 ### Manifest Configuration
