@@ -14,3 +14,6 @@ export const AI_ENABLE = 'true'
 
 export const WEBHOOK_CLIENT_STATE = process.env.REACT_APP_WEBHOOK_CLIENT_STATE || 'olxcat-ai-webhook-secret';
 
+// Organization Id used for admin preset creation
+export const ORGANIZATION_ID = process.env.REACT_APP_ORGANIZATION_ID || '93317fce-e17a-4db0-a445-deea729eaae9'
+

@@ -8,6 +8,7 @@ import EmailDetail from './components/EmailDetail';
 import Settings from './components/Settings';
 import { SubscriptionStatus } from './components/SubscriptionStatus';
 import { CategoryUpdates } from './components/CategoryUpdates';
+import ReportingDashboardFluent from './components/ReportingDashboardFluent';
 import { useCategories, useEmails, useSettings, useOffice } from './hooks';
 import { ensureTokens, signOut } from './lib/outlookAuth';
 import { Category, Email, UserSettings } from './types';
@@ -72,11 +73,14 @@ const useStyles = makeStyles({
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
     borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
     backgroundColor: tokens.colorNeutralBackground1,
+    overflow: 'visible',
   },
   tabsWrap: {
     display: 'flex',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
+    overflowX: 'auto',
+    WebkitOverflowScrolling: 'touch',
   },
   navigationTitle: {
     fontSize: tokens.fontSizeBase300,
@@ -96,7 +100,7 @@ const useStyles = makeStyles({
     flex: 1,
     minHeight: 0,
     overflowY: 'auto',
-    overflowX: 'hidden',
+    overflowX: 'auto',
     backgroundColor: tokens.colorNeutralBackground1,
   },
   menuItem: {
@@ -156,56 +160,56 @@ const App: React.FC = () => {
     console.log('Categories updated:', newCategories);
   };
 
-  const handleEmailUpdate = (newEmails: Email[]) => {
-    newEmails.forEach(ne => {
-      const prev = emails.find(e => e.id === ne.id)
-      if (!prev) return
-      const updates: Partial<Email> = {}
-      if (prev.categoryId !== ne.categoryId) updates.categoryId = ne.categoryId
-      if (prev.isProcessed !== ne.isProcessed) updates.isProcessed = ne.isProcessed
-      if (Object.keys(updates).length > 0) {
-        updateEmail(ne.id, updates)
-      }
-    })
-  };
+  // const handleEmailUpdate = (newEmails: Email[]) => {
+  //   newEmails.forEach(ne => {
+  //     const prev = emails.find(e => e.id === ne.id)
+  //     if (!prev) return
+  //     const updates: Partial<Email> = {}
+  //     if (prev.categoryId !== ne.categoryId) updates.categoryId = ne.categoryId
+  //     if (prev.isProcessed !== ne.isProcessed) updates.isProcessed = ne.isProcessed
+  //     if (Object.keys(updates).length > 0) {
+  //       updateEmail(ne.id, updates)
+  //     }
+  //   })
+  // };
 
   const handleSettingsChange = (newSettings: UserSettings) => {
     updateSettings(newSettings);
   };
 
-  const getTabTitle = () => {
-    switch (selectedTab) {
-      case 'home':
-        return 'Home';
-      case 'emails':
-        return 'Emails';
-      case 'categories':
-        return 'Category Manager';
-      case 'monitoring':
-        return 'Email Monitoring';
-      case 'settings':
-        return 'Settings';
-      default:
-        return 'Home';
-    }
-  };
+  // const getTabTitle = () => {
+  //   switch (selectedTab) {
+  //     case 'home':
+  //       return 'Home';
+  //     case 'emails':
+  //       return 'Emails';
+  //     case 'categories':
+  //       return 'Category Manager';
+  //     case 'monitoring':
+  //       return 'Email Monitoring';
+  //     case 'settings':
+  //       return 'Settings';
+  //     default:
+  //       return 'Home';
+  //   }
+  // };
 
-  const getTabIcon = () => {
-    switch (selectedTab) {
-      case 'home':
-        return <HomeRegular />;
-      case 'emails':
-        return <MailRegular />;
-      case 'categories':
-        return <FolderRegular />;
-      case 'monitoring':
-        return <MailRegular />;
-      case 'settings':
-        return <SettingsRegular />;
-      default:
-        return <HomeRegular />;
-    }
-  };
+  // const getTabIcon = () => {
+  //   switch (selectedTab) {
+  //     case 'home':
+  //       return <HomeRegular />;
+  //     case 'emails':
+  //       return <MailRegular />;
+  //     case 'categories':
+  //       return <FolderRegular />;
+  //     case 'monitoring':
+  //       return <MailRegular />;
+  //     case 'settings':
+  //       return <SettingsRegular />;
+  //     default:
+  //       return <HomeRegular />;
+  //   }
+  // };
 
   const renderContent = () => {
     switch (selectedTab) {
@@ -252,6 +256,12 @@ const App: React.FC = () => {
             </div>
           </div>
         );
+      case 'reports':
+        return (
+          <div style={{ padding: tokens.spacingHorizontalL }}>
+            <ReportingDashboardFluent categories={categories} />
+          </div>
+        );
       case 'settings':
         return (
           <Settings
@@ -288,10 +298,11 @@ const App: React.FC = () => {
       <main className={styles.main}>
         <div className={styles.navigation}>
           <div className={styles.tabsWrap}>
-            <TabList selectedValue={selectedTab} onTabSelect={(_, data) => handleTabSelect(String(data.value))}>
+            <TabList size="small" selectedValue={selectedTab} onTabSelect={(_, data) => handleTabSelect(String(data.value))}>
               <Tab icon={<HomeRegular />} value="home">Home</Tab>
               <Tab icon={<MailRegular />} value="emails">Emails</Tab>
               <Tab icon={<SettingsRegular />} value="settings">Settings</Tab>
+              <Tab icon={<FolderRegular />} value="reports">Reports</Tab>
             </TabList>
           </div>
         </div>

@@ -1,4 +1,5 @@
 import { http } from '../lib/http'
+import type { ReportsSummary, TopCategory } from '../types'
 
 export type CategoryUsageRow = {
   categoryId: string
@@ -23,5 +24,25 @@ export const reportsService = {
           messageCount: row.count,
         }))
       }),
+  summary: (from?: string, to?: string) => {
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    return http
+      .get<{ success: boolean; data: ReportsSummary }>(`/v1/reports/summary?${params.toString()}`, {
+        omitGraphToken: true,
+      })
+      .then(r => r.data.data)
+  },
+  topCategories: (from?: string, to?: string) => {
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    return http
+      .get<{ success: boolean; data: TopCategory[] }>(`/v1/reports/top-categories?${params.toString()}`, {
+        omitGraphToken: true,
+      })
+      .then(r => r.data.data)
+  },
 }
 

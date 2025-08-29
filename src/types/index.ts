@@ -33,4 +33,15 @@ export interface UserSettings {
   privacyMode: boolean;
 }
 
+export type ReportsSummary = {
+  total: number
+  autoMoved: number
+  skippedBelowThreshold: number
+  feedbackCorrections: number
+  avgConfidence: number | null
+  attachmentUsageRate: number
+}
+
+export type TopCategory = { categoryId: string; count: number }
+
 export {}
