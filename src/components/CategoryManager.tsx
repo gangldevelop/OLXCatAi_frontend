@@ -32,7 +32,9 @@ import {
 import { AddRegular, EditRegular, DeleteRegular } from '@fluentui/react-icons';
 import { Category } from '../types';
 import { AuthStore } from '../stores/auth';
-import { notifyError } from '../lib/notify';
+import { notifyError, notifySuccess } from '../lib/notify';
+import { adminService } from '../services/adminService'
+import { ORGANIZATION_ID } from '../config/env'
 
 const useStyles = makeStyles({
   container: {
@@ -191,35 +193,47 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
     isActive: true,
   });
   const [newKeyword, setNewKeyword] = useState('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const [lockPreset, setLockPreset] = useState<boolean>(false)
+  const [probingAdmin, setProbingAdmin] = useState<boolean>(false)
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!formData.name || !formData.color) return
     if (formData.linkFolder && !AuthStore.getState().graphToken) {
       notifyError('Outlook authentication required', 'Please re-authenticate Outlook to link a folder.')
       return
     }
-    if (onAddCategory) {
-      onAddCategory({
-        name: formData.name,
-        color: formData.color,
-        outlookFolderId: null,
-        keywords: formData.keywords,
-        isActive: formData.isActive,
-        linkFolder: formData.linkFolder,
-      } as any);
-    } else {
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        name: formData.name,
-        color: formData.color,
-        outlookFolderId: null,
-        keywords: formData.keywords,
-        isActive: formData.isActive,
-      };
-      onCategoryChange([...categories, newCategory]);
+    try {
+      if (onAddCategory) {
+        await onAddCategory({
+          name: formData.name,
+          color: formData.color,
+          outlookFolderId: null,
+          keywords: formData.keywords,
+          isActive: formData.isActive,
+          linkFolder: formData.linkFolder,
+        } as any);
+      } else {
+        const newCategory: Category = {
+          id: Date.now().toString(),
+          name: formData.name,
+          color: formData.color,
+          outlookFolderId: null,
+          keywords: formData.keywords,
+          isActive: formData.isActive,
+        };
+        onCategoryChange([...categories, newCategory]);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (e: any) {
+      const status = e?.response?.status
+      if (status === 409 || /exists/i.test(e?.message || '')) {
+        notifyError('This category name already exists.')
+      } else {
+        notifyError('Failed to create category')
+      }
     }
-    resetForm();
-    setIsDialogOpen(false);
   };
 
   const handleEditCategory = (category: Category) => {
@@ -234,21 +248,31 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
     setIsDialogOpen(true);
   };
 
-  const handleUpdateCategory = () => {
+  const handleUpdateCategory = async () => {
     if (!editingCategory) return;
-    
-    if (onUpdateCategory) {
-      onUpdateCategory(editingCategory.id, { name: formData.name, color: formData.color, keywords: formData.keywords });
-    } else {
-      const updatedCategories = categories.map(cat =>
-        cat.id === editingCategory.id
-          ? { ...cat, ...formData }
-          : cat
-      );
-      onCategoryChange(updatedCategories);
+    try {
+      if (onUpdateCategory) {
+        await onUpdateCategory(editingCategory.id, { name: formData.name, color: formData.color, keywords: formData.keywords });
+      } else {
+        const updatedCategories = categories.map(cat =>
+          cat.id === editingCategory.id
+            ? { ...cat, ...formData }
+            : cat
+        );
+        onCategoryChange(updatedCategories);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+    } catch (e: any) {
+      const status = e?.response?.status
+      if (status === 409 && /locked preset/i.test(e?.message || '')) {
+        notifyError('This category is locked by an admin preset.')
+      } else if (status === 409) {
+        notifyError('A category with this name already exists.')
+      } else {
+        notifyError('Failed to update category')
+      }
     }
-    resetForm();
-    setIsDialogOpen(false);
   };
 
   const handleDeleteCategory = (categoryId: string) => {
@@ -293,6 +317,49 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
     resetForm();
     setIsDialogOpen(true);
   };
+
+  useEffect(() => {
+    let mounted = true
+    const probe = async () => {
+      setProbingAdmin(true)
+      try {
+        const ok = await adminService.probeAccess()
+        if (mounted) setIsAdmin(!!ok)
+      } catch {
+        if (mounted) setIsAdmin(false)
+      } finally {
+        if (mounted) setProbingAdmin(false)
+      }
+    }
+    probe()
+    return () => { mounted = false }
+  }, [])
+
+  const handleCreatePreset = async () => {
+    try {
+      const body = {
+        organizationId: ORGANIZATION_ID,
+        name: formData.name,
+        color: formData.color,
+        keywords: (Array.isArray(formData.keywords) ? formData.keywords.join(',') : undefined) as string | undefined,
+        isDefault: true,
+        locked: !!lockPreset,
+      }
+      await adminService.createPreset(body as any)
+      notifySuccess('Preset created.')
+    } catch (e: any) {
+      const status = e?.response?.status
+      if (status === 403) {
+        setIsAdmin(false)
+        return
+      }
+      if (status === 409 || status === 500) {
+        notifyError('Preset already exists.')
+        return
+      }
+      notifyError('Failed to create preset')
+    }
+  }
 
   useEffect(() => {
     const t = setTimeout(() => setDebounced(filter), 300)
@@ -349,6 +416,21 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
                       </Text>
                     )}
                   </div>
+
+                  {isAdmin && (
+                    <div style={{ marginTop: tokens.spacingVerticalM, paddingTop: tokens.spacingVerticalS, borderTop: `1px solid ${tokens.colorNeutralStroke1}` }}>
+                      <Label>Admin actions</Label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, marginTop: 6 }}>
+                        <Button size="small" appearance="secondary" onClick={handleCreatePreset} disabled={!formData.name || probingAdmin}>
+                          Create company preset from this category
+                        </Button>
+                        <Switch label="Locked" checked={lockPreset} onChange={(_, d) => setLockPreset(d.checked)} />
+                      </div>
+                      <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+                        Company preset: matches by name; locked blocks name/color/keywords edits.
+                      </Text>
+                    </div>
+                  )}
 
                   <div>
                     <Label>Category Color</Label>

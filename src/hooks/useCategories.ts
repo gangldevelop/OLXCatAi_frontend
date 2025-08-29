@@ -94,16 +94,28 @@ export const useCategories = () => {
   }, [load])
 
   const updateCategory = useCallback(async (id: string, updates: Partial<Category>) => {
-    const updated = await categoryService.update(id, {
-      name: updates.name,
-      color: updates.color ? normalizeColor(updates.color) : undefined,
-      keywords: Array.isArray(updates.keywords) ? updates.keywords : [],
-    })
-    const merged = {
-      ...updated,
-      keywords: (updated as any).keywords ?? updates.keywords ?? [],
-    } as BackendCategory
-    setCategories(prev => prev.map(cat => cat.id === id ? mapToUi(merged) : cat))
+    try {
+      const updated = await categoryService.update(id, {
+        name: updates.name,
+        color: updates.color ? normalizeColor(updates.color) : undefined,
+        keywords: Array.isArray(updates.keywords) ? updates.keywords : [],
+      })
+      const merged = {
+        ...updated,
+        keywords: (updated as any).keywords ?? updates.keywords ?? [],
+      } as BackendCategory
+      setCategories(prev => prev.map(cat => cat.id === id ? mapToUi(merged) : cat))
+    } catch (e: any) {
+      const isLocked = e?.response?.status === 409 && /locked preset/i.test(e?.message || '')
+      if (isLocked) {
+        notifyError('This category is locked by an admin preset.')
+      } else if (e?.response?.status === 409 && /exists/i.test(e?.message || '')) {
+        notifyError('A category with this name already exists.')
+      } else {
+        notifyError('Failed to update category')
+      }
+      throw e
+    }
   }, [])
 
   const deleteCategory = useCallback(async (id: string) => {
