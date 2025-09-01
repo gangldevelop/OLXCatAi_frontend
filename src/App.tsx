@@ -79,8 +79,25 @@ const useStyles = makeStyles({
     display: 'flex',
     justifyContent: 'flex-start',
     alignItems: 'center',
-    overflowX: 'auto',
-    WebkitOverflowScrolling: 'touch',
+    width: '100%',
+    maxWidth: '320px',
+    '& [role="tab"]': {
+      minWidth: 'auto',
+      padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalXS}`,
+      fontSize: tokens.fontSizeBase200,
+      whiteSpace: 'nowrap',
+      flexShrink: 0,
+    },
+    '& [role="tab"] [data-icon]': {
+      width: '14px',
+      height: '14px',
+      marginRight: '3px',
+    },
+    '& [role="tab"] span': {
+      fontSize: tokens.fontSizeBase200,
+      lineHeight: '1.2',
+      fontWeight: tokens.fontWeightRegular,
+    },
   },
   navigationTitle: {
     fontSize: tokens.fontSizeBase300,
@@ -298,7 +315,11 @@ const App: React.FC = () => {
       <main className={styles.main}>
         <div className={styles.navigation}>
           <div className={styles.tabsWrap}>
-            <TabList size="small" selectedValue={selectedTab} onTabSelect={(_, data) => handleTabSelect(String(data.value))}>
+            <TabList 
+              size="small" 
+              selectedValue={selectedTab} 
+              onTabSelect={(_, data) => handleTabSelect(String(data.value))}
+            >
               <Tab icon={<HomeRegular />} value="home">Home</Tab>
               <Tab icon={<MailRegular />} value="emails">Emails</Tab>
               <Tab icon={<SettingsRegular />} value="settings">Settings</Tab>
