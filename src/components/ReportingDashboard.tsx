@@ -25,38 +25,32 @@ import type { ReportsSummary, TopCategory, Category } from '../types'
 const useStyles = makeStyles({
   root: {
     display: 'grid',
-    rowGap: '16px',
-    minWidth: '360px',
+    rowGap: '12px',
+    maxWidth: '350px',
+    width: '100%',
   },
   controls: {
     display: 'flex',
-    columnGap: '12px',
+    flexDirection: 'column',
     rowGap: '8px',
-    alignItems: 'end',
-    flexWrap: 'wrap',
+    alignItems: 'stretch',
   },
   field: {
-    minWidth: '160px',
-    '@media (max-width: 480px)': {
-      width: '100%',
-    },
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
   },
   kpiGrid: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(5, minmax(140px, 1fr))',
-    columnGap: '12px',
-    rowGap: '12px',
-    '@media (max-width: 900px)': {
-      gridTemplateColumns: 'repeat(3, 1fr)',
-    },
-    '@media (max-width: 640px)': {
-      gridTemplateColumns: 'repeat(2, 1fr)',
-    },
-    '@media (max-width: 420px)': {
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    columnGap: '8px',
+    rowGap: '8px',
+    '@media (max-width: 350px)': {
       gridTemplateColumns: '1fr',
     },
   },
-  kpiCard: { ...shorthands.padding('10px'), display: 'flex', flexDirection: 'column', rowGap: '2px' },
+  kpiCard: { ...shorthands.padding('8px'), display: 'flex', flexDirection: 'column', rowGap: '2px' },
   kpiValue: {
     color: tokens.colorNeutralForeground1,
     fontSize: tokens.fontSizeBase300,
@@ -67,9 +61,24 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground3,
     fontSize: tokens.fontSizeBase100,
   },
-  tableWrap: { overflowX: 'auto' },
+  tableWrap: { 
+    overflowX: 'auto',
+    '& table': {
+      fontSize: tokens.fontSizeBase100,
+    },
+    '& th, & td': {
+      padding: '4px 6px',
+      fontSize: tokens.fontSizeBase100,
+    },
+  },
   barCell: { display: 'flex', alignItems: 'center', columnGap: '8px' },
   bar: { height: '8px', backgroundColor: tokens.colorBrandBackground, ...shorthands.borderRadius('4px') },
+  sectionHeader: {
+    fontSize: tokens.fontSizeBase300,
+    fontWeight: tokens.fontWeightSemibold,
+    color: tokens.colorNeutralForeground1,
+    marginBottom: '8px',
+  },
 })
 
 function formatISO(d: Date) {
@@ -166,7 +175,7 @@ export function ReportingDashboardFluent({ categories }: Props) {
 
       {summary && (
         <section>
-          <Title3>Summary</Title3>
+          <div className={styles.sectionHeader}>Summary</div>
           <div className={styles.kpiGrid}>
             <Card className={styles.kpiCard}>
               <Subtitle2>Auto-moved</Subtitle2>
@@ -199,7 +208,7 @@ export function ReportingDashboardFluent({ categories }: Props) {
 
       <Divider />
       <section>
-        <Title3>Top Categories (auto-moved)</Title3>
+        <div className={styles.sectionHeader}>Top Categories (auto-moved)</div>
         <div className={styles.tableWrap}>
         <Table aria-label="Top categories">
           <TableHeader>

@@ -8,7 +8,7 @@ import EmailDetail from './components/EmailDetail';
 import Settings from './components/Settings';
 import { SubscriptionStatus } from './components/SubscriptionStatus';
 import { CategoryUpdates } from './components/CategoryUpdates';
-import ReportingDashboardFluent from './components/ReportingDashboardFluent';
+import ReportingDashboardFluent from './components/ReportingDashboard';
 import { useCategories, useEmails, useSettings, useOffice } from './hooks';
 import { ensureTokens, signOut } from './lib/outlookAuth';
 import { Category, Email, UserSettings } from './types';
@@ -275,7 +275,7 @@ const App: React.FC = () => {
         );
       case 'reports':
         return (
-          <div style={{ padding: tokens.spacingHorizontalL }}>
+          <div style={{ padding: tokens.spacingHorizontalS }}>
             <ReportingDashboardFluent categories={categories} />
           </div>
         );
