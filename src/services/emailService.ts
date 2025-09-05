@@ -2,6 +2,7 @@ import { http } from '../lib/http'
 import { BackendEmailMessage } from '../types/email'
 import { withBackoff } from '../lib/backoff'
 import { BulkMoveRequest, BulkMoveResponse } from '../types/bulkMove'
+import { ensureFreshGraphToken } from '../lib/outlookAuth'
 
 // Simple in-memory ETag cache keyed by endpoint+params
 type EmailListCacheEntry = { etag: string; data: BackendEmailMessage[] }
@@ -74,21 +75,27 @@ export const emailService = {
         `/emails/${encodeURIComponent(id)}/predict-category`
       )
       .then(r => r.data.data?.predictions || []),
-  move: (id: string, categoryId: string) =>
-    http
+  move: async (id: string, categoryId: string) => {
+    await ensureFreshGraphToken()
+    return http
       .post(`/emails/${encodeURIComponent(id)}/move`, { categoryId }, { graphRequired: true } as any)
-      .then(r => r.data),
-  bulkMove: (req: BulkMoveRequest) =>
-    http
+      .then(r => r.data)
+  },
+  bulkMove: async (req: BulkMoveRequest) => {
+    await ensureFreshGraphToken()
+    return http
       .post<BulkMoveResponse>('/emails/bulk-move', req, { graphRequired: true } as any)
-      .then(r => r.data),
-  feedback: (id: string, categoryId: string, autoMove: boolean = true) =>
-    http
+      .then(r => r.data)
+  },
+  feedback: async (id: string, categoryId: string, autoMove: boolean = true) => {
+    await ensureFreshGraphToken()
+    return http
       .post(
         `/emails/${encodeURIComponent(id)}/feedback`,
         { categoryId, autoMove },
         { graphRequired: true } as any
       )
-      .then(r => r.data),
+      .then(r => r.data)
+  },
 }
 

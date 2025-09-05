@@ -166,3 +166,26 @@ export const signOut = async () => {
   }
 }
 
+// Acquire a fresh delegated Microsoft Graph token and store it
+export const acquireFreshGraphToken = async (): Promise<string | null> => {
+  try {
+    if (window.OfficeRuntime?.auth?.getAccessToken) {
+      const token = await window.OfficeRuntime.auth.getAccessToken({ allowSignInPrompt: true })
+      if (token) {
+        AuthStore.setGraphToken(token)
+        return token
+      }
+    }
+  } catch (error) {
+    console.error('Failed to acquire fresh Graph token:', error)
+  }
+  return null
+}
+
+// Ensure a fresh token before calling Graph-touching endpoints
+export const ensureFreshGraphToken = async (): Promise<string | null> => {
+  // Always try to acquire a new token (per product guidance)
+  const token = await acquireFreshGraphToken()
+  return token
+}
+

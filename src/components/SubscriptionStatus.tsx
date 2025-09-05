@@ -20,6 +20,7 @@ import {
   PlayRegular,
   DeleteRegular,
   WarningRegular,
+  ArrowSyncRegular,
 } from '@fluentui/react-icons';
 import { useSubscriptions } from '../hooks/useSubscriptions';
 import { AuthStore } from '../stores/auth';
@@ -112,7 +113,8 @@ export const SubscriptionStatus: React.FC = () => {
     error, 
     startEmailMonitoring, 
     deleteSubscription,
-    fetchSubscriptions 
+    fetchSubscriptions,
+    rotateSubscriptions,
   } = useSubscriptions();
   const { graphToken } = AuthStore.getState();
 
@@ -134,8 +136,17 @@ export const SubscriptionStatus: React.FC = () => {
     }
   };
 
+  const handleRotate = async () => {
+    try {
+      await rotateSubscriptions();
+    } catch (error) {
+      // Error handled in hook
+    }
+  }
+
   const hasActiveSubscription = subscriptions.some(sub => sub.isActive);
   const canStartMonitoring = !!graphToken && !hasActiveSubscription;
+  const isDev = process.env.NODE_ENV === 'development';
   
 
   if (loading) {
@@ -169,11 +180,20 @@ export const SubscriptionStatus: React.FC = () => {
         <CardHeader
           header={<Title3>Email Monitoring Status</Title3>}
           description={<Caption1>Monitor your inbox for new emails and automatic categorization</Caption1>}
-          action={canStartMonitoring ? (
-            <Button appearance="primary" icon={<PlayRegular />} onClick={handleStartMonitoring}>
-              Start Email Monitoring
-            </Button>
-          ) : null}
+          action={
+            <div style={{ display: 'flex', gap: 8 }}>
+              {canStartMonitoring ? (
+                <Button appearance="primary" icon={<PlayRegular />} onClick={handleStartMonitoring}>
+                  Start Email Monitoring
+                </Button>
+              ) : null}
+              {isDev ? (
+                <Button appearance="secondary" icon={<ArrowSyncRegular />} onClick={handleRotate}>
+                  Rotate subscriptions
+                </Button>
+              ) : null}
+            </div>
+          }
         />
 
         {subscriptions.length === 0 ? (

@@ -2,6 +2,7 @@ import axios from 'axios'
 import { API_BASE_URL } from '../config/env'
 import { AuthStore } from '../stores/auth'
 import { notifyError } from './notify'
+import { ensureFreshGraphToken } from './outlookAuth'
 
 export const http = axios.create({
   baseURL: API_BASE_URL,
@@ -30,7 +31,40 @@ http.interceptors.response.use(
     const status = error?.response?.status
     const cfg = error?.config || {}
     const graphRequired = (cfg as any).graphRequired === true
+    const isRetry = (cfg as any).__isRetry === true
+    
     if (status === 401 || status === 403) {
+      // Check if this is a Graph token issue (JWT error suggests expired token)
+      const errorMessage = error?.response?.data?.error?.message || error?.message || ''
+      const isGraphTokenError = errorMessage.includes('JWT') || errorMessage.includes('token') || errorMessage.includes('InvalidAuthenticationToken')
+      
+      if (isGraphTokenError && !isRetry) {
+        console.log('Graph token appears expired, attempting to refresh...')
+        
+        try {
+          // Try to get a fresh Graph token
+          const freshToken = await ensureFreshGraphToken()
+          
+          if (freshToken) {
+            console.log('Successfully refreshed Graph token, retrying request...')
+            
+            // Mark this as a retry to avoid infinite loops
+            cfg.__isRetry = true
+            
+            // Retry the original request with the fresh token
+            return http.request(cfg)
+          } else {
+            console.error('Failed to get fresh Graph token')
+            notifyError('Outlook authentication required', 'Please re-authenticate Outlook to continue.')
+            return Promise.reject(error)
+          }
+        } catch (refreshError) {
+          console.error('Error refreshing Graph token:', refreshError)
+          notifyError('Outlook authentication required', 'Please re-authenticate Outlook to continue.')
+          return Promise.reject(error)
+        }
+      }
+      
       if (graphRequired) {
         notifyError('Outlook authentication required', 'Please re-authenticate Outlook to continue.')
         return Promise.reject(error)
@@ -39,10 +73,12 @@ http.interceptors.response.use(
       AuthStore.clear()
       return Promise.reject(error)
     }
+    
     if (status === 429) {
       notifyError('Rate limited', 'Too many requests. Please retry shortly.')
       return Promise.reject(error)
     }
+    
     const data = error?.response?.data
     if (data?.error?.message) {
       error.message = data.error.message

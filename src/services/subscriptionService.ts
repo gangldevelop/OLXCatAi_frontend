@@ -18,15 +18,24 @@ export interface CreateSubscriptionRequest {
   clientState?: string
 }
 
+export interface SubscriptionSchedulerStatus {
+  enabled: boolean
+  intervalMs: number
+  lookaheadHours: number
+  extendDays: number
+  lastRunAt: string | null
+  lastError: string | null
+}
+
 export const subscriptionService = {
   // Get user's email subscriptions
   list: () => http
-    .get<{ success: boolean; data: Subscription[] }>('/subscriptions')
+    .get<{ success: boolean; data: Subscription[] }>(`/subscriptions`)
     .then(r => r.data.data),
 
   // Create email monitoring subscription
   create: (params: CreateSubscriptionRequest) => http
-    .post<{ success: boolean; data: Subscription }>('/subscriptions', params, { graphRequired: true } as any)
+    .post<{ success: boolean; data: Subscription }>(`/subscriptions`, params, { graphRequired: true } as any)
     .then(r => r.data.data),
 
   // Delete subscription
@@ -34,8 +43,13 @@ export const subscriptionService = {
     .delete<{ success: boolean }>(`/subscriptions/${id}`)
     .then(r => r.data),
 
-  // Get subscription status
+  // Get subscription status (scheduler/health)
   getStatus: () => http
-    .get<{ success: boolean; data: { isActive: boolean; subscriptionCount: number } }>('/subscriptions/status')
+    .get<{ success: boolean; data: SubscriptionSchedulerStatus }>(`/subscriptions/status`)
     .then(r => r.data.data),
+
+  // Rotate subscriptions (dev-only)
+  rotate: () => http
+    .post<{ success: boolean }>(`/subscriptions/rotate`, {}, { graphRequired: true } as any)
+    .then(r => r.data),
 }
