@@ -13,12 +13,12 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="OLXCatAI" />
   <Description DefaultValue="AI-Powered Email Categorization Add-In for Microsoft Outlook. Automatically categorize emails using intelligent AI analysis." />
-  <IconUrl DefaultValue=" https://df1efd5806a4.ngrok-free.app/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue=" https://df1efd5806a4.ngrok-free.app/icon-64.png" />
+  <IconUrl DefaultValue=" https://9cf60359999b.ngrok-free.app/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue=" https://9cf60359999b.ngrok-free.app/icon-64.png" />
   <SupportUrl DefaultValue="https://github.com/your-org/olxcat-ai" />
   <AppDomains>
-    <AppDomain>https://f64503895817.ngrok-free.app</AppDomain>
-    <AppDomain> https://df1efd5806a4.ngrok-free.app</AppDomain>
+    <AppDomain>https://97425cdeb633.ngrok-free.app</AppDomain>
+    <AppDomain> https://9cf60359999b.ngrok-free.app</AppDomain>
     <AppDomain>https://your-production-domain.com</AppDomain>
     <AppDomain>https://login.microsoftonline.com</AppDomain>
     <AppDomain>https://login.live.com</AppDomain>
@@ -42,15 +42,15 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue=" https://df1efd5806a4.ngrok-free.app" />
+        <SourceLocation DefaultValue=" https://9cf60359999b.ngrok-free.app" />
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
       <TabletSettings>
-        <SourceLocation DefaultValue=" https://df1efd5806a4.ngrok-free.app" />
+        <SourceLocation DefaultValue=" https://9cf60359999b.ngrok-free.app" />
         <RequestedHeight>450</RequestedHeight>
       </TabletSettings>
       <PhoneSettings>
-        <SourceLocation DefaultValue=" https://df1efd5806a4.ngrok-free.app" />
+        <SourceLocation DefaultValue=" https://9cf60359999b.ngrok-free.app" />
       </PhoneSettings>
     </Form>
   </FormSettings>
@@ -101,13 +101,13 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="icon-16" DefaultValue=" https://df1efd5806a4.ngrok-free.app/icon-16.png" />
-        <bt:Image id="icon-32" DefaultValue=" https://df1efd5806a4.ngrok-free.app/icon-32.png" />
-        <bt:Image id="icon-80" DefaultValue=" https://df1efd5806a4.ngrok-free.app/icon-80.png" />
+        <bt:Image id="icon-16" DefaultValue=" https://9cf60359999b.ngrok-free.app/icon-16.png" />
+        <bt:Image id="icon-32" DefaultValue=" https://9cf60359999b.ngrok-free.app/icon-32.png" />
+        <bt:Image id="icon-80" DefaultValue=" https://9cf60359999b.ngrok-free.app/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="functionFile" DefaultValue=" https://df1efd5806a4.ngrok-free.app/function-file.html" />
-        <bt:Url id="messageReadTaskPaneUrl" DefaultValue=" https://df1efd5806a4.ngrok-free.app" />
+        <bt:Url id="functionFile" DefaultValue=" https://9cf60359999b.ngrok-free.app/function-file.html" />
+        <bt:Url id="messageReadTaskPaneUrl" DefaultValue=" https://9cf60359999b.ngrok-free.app" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="OLXCatAI" />
