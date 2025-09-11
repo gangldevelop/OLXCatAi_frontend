@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Card,
   CardHeader,
@@ -22,6 +22,8 @@ import {
   KeyResetRegular,
 } from '@fluentui/react-icons';
 import { UserSettings } from '../types';
+import AdminPresets from './AdminPresets'
+import { adminService } from '../services/adminService'
 
 const useStyles = makeStyles({
   container: {
@@ -92,6 +94,8 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSettingsChange, onToggl
   const styles = useStyles();
   const [localSettings, setLocalSettings] = useState<UserSettings>(settings);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const [probing, setProbing] = useState<boolean>(false)
 
   const handleSettingChange = (key: keyof UserSettings, value: any) => {
     setLocalSettings(prev => ({ ...prev, [key]: value }));
@@ -114,6 +118,22 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSettingsChange, onToggl
     batchProcessing: false,
     privacyMode: false,
   };
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      setProbing(true)
+      try {
+        const ok = await adminService.probeAccess()
+        if (mounted) setIsAdmin(!!ok)
+      } catch {
+        if (mounted) setIsAdmin(false)
+      } finally {
+        if (mounted) setProbing(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
 
   return (
     <div className={styles.container}>
@@ -197,6 +217,10 @@ const Settings: React.FC<SettingsProps> = ({ settings, onSettingsChange, onToggl
             </div>
           </CardPreview>
         </Card>
+
+        {isAdmin && (
+          <AdminPresets />
+        )}
       </div>
 
       <div className={styles.actions}>
