@@ -46,3 +46,26 @@ export const reportsService = {
   },
 }
 
+export const adminReportsService = {
+  summary: (from?: string, to?: string) => {
+    const params = new URLSearchParams()
+    if (from) params.set('from', from)
+    if (to) params.set('to', to)
+    return http
+      .get<{ success: boolean; data: ReportsSummary }>(`/v1/admin/reports/summary?${params.toString()}`, {
+        omitGraphToken: true,
+      })
+      .then(r => r.data.data)
+  },
+  topCategories: (teamId?: string) => {
+    const params = new URLSearchParams()
+    if (teamId) params.set('teamId', teamId)
+    return http
+      .get<{ success: boolean; data: Array<{ categoryId: string; name?: string | null; count: number }> }>(
+        `/v1/admin/reports/top-categories?${params.toString()}`,
+        { omitGraphToken: true },
+      )
+      .then(r => r.data.data)
+  },
+}
+

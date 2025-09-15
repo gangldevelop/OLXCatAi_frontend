@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { adminService } from '../services/adminService'
+import { http } from '../lib/http'
 import { ORGANIZATION_ID } from '../config/env'
 import { notifyError, notifySuccess } from '../lib/notify'
 import {
@@ -31,10 +32,10 @@ import { DeleteRegular, ShieldRegular } from '@fluentui/react-icons'
 
 const useStyles = makeStyles({
   grid: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
-  controlsBar: { display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 },
+  controlsBar: { display: 'flex', gap: tokens.spacingHorizontalS, alignItems: 'center', marginBottom: tokens.spacingVerticalS },
   responsiveTable: { width: '100%' },
   truncatedCell: {
-    maxWidth: 220,
+    maxWidth: '220px',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
@@ -53,6 +54,7 @@ export const AdminPresets: React.FC<{ organizationId?: string; teamId?: string }
   const [top, setTop] = useState(10)
   const [skip, setSkip] = useState(0)
   const [count, setCount] = useState<number>(0)
+  const [forbidden, setForbidden] = useState<boolean>(false)
 
   const fetchPresets = async () => {
     setLoading(true)
@@ -64,10 +66,12 @@ export const AdminPresets: React.FC<{ organizationId?: string; teamId?: string }
       const res = await adminService.listPresets(q)
       setPresets(res.data || [])
       setCount(res.count || (res.data?.length ?? 0))
+      setForbidden(false)
     } catch (e: any) {
       const status = e?.response?.status
       if (status === 403) {
-        notifyError('Access denied')
+        notifyError("You don't have admin permissions for this organization.")
+        setForbidden(true)
       } else {
         notifyError('Failed to load presets')
       }
@@ -141,6 +145,10 @@ export const AdminPresets: React.FC<{ organizationId?: string; teamId?: string }
 
           {loading ? (
             <div style={{ padding: 16 }}><Spinner /></div>
+          ) : forbidden ? (
+            <div style={{ padding: 12 }}>
+              <Text>You don't have admin permissions for this organization.</Text>
+            </div>
           ) : (
             <Table className={styles.responsiveTable}>
               <TableHeader>

@@ -19,7 +19,8 @@ import {
   TableCell,
   Title3,
 } from '@fluentui/react-components'
-import { reportsService } from '../services/reportsService'
+import { reportsService, adminReportsService } from '../services/reportsService'
+import { adminService } from '../services/adminService'
 import type { ReportsSummary, TopCategory, Category } from '../types'
 
 const useStyles = makeStyles({
@@ -101,27 +102,61 @@ export function ReportingDashboardFluent({ categories }: Props) {
   const [summary, setSummary] = React.useState<ReportsSummary | null>(null)
   const [topCats, setTopCats] = React.useState<TopCategory[]>([])
   const [error, setError] = React.useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = React.useState<boolean>(false)
+  const [probing, setProbing] = React.useState<boolean>(false)
+  const [teamId, setTeamId] = React.useState<string>('')
 
   const load = React.useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      const [s, t] = await Promise.all([
-        reportsService.summary(from, to),
-        reportsService.topCategories(from, to),
-      ])
-      setSummary(s)
-      setTopCats(t)
+      if (isAdmin) {
+        const [s, t] = await Promise.all([
+          adminReportsService.summary(from, to),
+          adminReportsService.topCategories(teamId || undefined),
+        ])
+        setSummary(s)
+        setTopCats((t || []).map(tc => ({ categoryId: tc.categoryId, count: tc.count, name: tc.name || null })) as any)
+      } else {
+        const [s, t] = await Promise.all([
+          reportsService.summary(from, to),
+          reportsService.topCategories(from, to),
+        ])
+        setSummary(s)
+        setTopCats(t)
+      }
     } catch (e: any) {
-      setError(e?.message || 'Failed to load reports')
+      const status = e?.response?.status
+      if (status === 403) {
+        setIsAdmin(false)
+        setError("You don't have admin permissions for this organization.")
+      } else {
+        setError(e?.message || 'Failed to load reports')
+      }
     } finally {
       setLoading(false)
     }
-  }, [from, to])
+  }, [from, to, isAdmin, teamId])
 
   React.useEffect(() => {
     void load()
   }, [load])
+
+  React.useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      setProbing(true)
+      try {
+        const ok = await adminService.probeAccess()
+        if (mounted) setIsAdmin(!!ok)
+      } catch {
+        if (mounted) setIsAdmin(false)
+      } finally {
+        if (mounted) setProbing(false)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
 
   const last7 = () => {
     setFrom(formatISO(new Date(Date.now() - 7 * 864e5)))
@@ -159,6 +194,12 @@ export function ReportingDashboardFluent({ categories }: Props) {
             onChange={e => setTo(new Date((e as any).currentTarget.value).toISOString())}
           />
         </div>
+        {isAdmin && (
+          <div className={styles.field}>
+            <Label htmlFor="teamId">Team (optional)</Label>
+            <Input id="teamId" value={teamId} onChange={e => setTeamId((e as any).currentTarget.value)} placeholder="teamId" />
+          </div>
+        )}
         <Button size="small" appearance="secondary" onClick={last7}>
           Last 7 days
         </Button>
@@ -208,7 +249,7 @@ export function ReportingDashboardFluent({ categories }: Props) {
 
       <Divider />
       <section>
-        <div className={styles.sectionHeader}>Top Categories (auto-moved)</div>
+        <div className={styles.sectionHeader}>{isAdmin ? 'Top Categories (Admin scope)' : 'Top Categories (auto-moved)'}</div>
         <div className={styles.tableWrap}>
         <Table aria-label="Top categories">
           <TableHeader>
@@ -219,9 +260,9 @@ export function ReportingDashboardFluent({ categories }: Props) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {topCats.map(c => (
+            {topCats.map((c: any) => (
               <TableRow key={c.categoryId}>
-                <TableCell>{getCategoryName(c.categoryId)}</TableCell>
+                <TableCell>{c.name || getCategoryName(c.categoryId)}</TableCell>
                 <TableCell>{c.count}</TableCell>
                 <TableCell>
                   <div className={styles.barCell}>

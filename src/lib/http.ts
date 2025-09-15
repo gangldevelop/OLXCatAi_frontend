@@ -33,7 +33,12 @@ http.interceptors.response.use(
     const graphRequired = (cfg as any).graphRequired === true
     const isRetry = (cfg as any).__isRetry === true
     
-    if (status === 401 || status === 403) {
+    // Do not clear auth or redirect on 403; surface at page level
+    if (status === 403) {
+      return Promise.reject(error)
+    }
+
+    if (status === 401) {
       // Check if this is a Graph token issue (JWT error suggests expired token)
       const errorMessage = error?.response?.data?.error?.message || error?.message || ''
       const isGraphTokenError = errorMessage.includes('JWT') || errorMessage.includes('token') || errorMessage.includes('InvalidAuthenticationToken')
@@ -49,7 +54,7 @@ http.interceptors.response.use(
             console.log('Successfully refreshed Graph token, retrying request...')
             
             // Mark this as a retry to avoid infinite loops
-            cfg.__isRetry = true
+            ;(cfg as any).__isRetry = true
             
             // Retry the original request with the fresh token
             return http.request(cfg)

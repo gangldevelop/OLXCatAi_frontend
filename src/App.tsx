@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { makeStyles, tokens, Text, TabList, Tab, Button } from '@fluentui/react-components';
-import { HomeRegular, FolderRegular, SettingsRegular, MailRegular } from '@fluentui/react-icons';
+import { HomeRegular, FolderRegular, SettingsRegular, MailRegular} from '@fluentui/react-icons';
 import Dashboard from './components/Dashboard';
 import CategoryManager from './components/CategoryManager';
 import EmailList from './components/EmailList';
