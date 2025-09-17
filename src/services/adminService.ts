@@ -23,6 +23,42 @@ export type OrgCategoryPreset = {
   updatedAt?: string
 }
 
+export type AdminMembership = {
+  organizationId: string
+  organizationName: string
+  teamId?: string | null
+  teamName?: string | null
+  role: string
+}
+
+export type DistributeOptions = {
+  createMissingFolders: boolean
+  overwriteNames?: boolean
+}
+
+export type DistributeRequest = {
+  organizationId: string
+  teamId?: string
+  userIds?: string[]
+  options: DistributeOptions
+}
+
+export type DistributeUserResult = {
+  userId: string
+  created: number
+  updated: number
+  skipped: number
+  folderLinked: number
+}
+
+export type DistributeResponse = {
+  success: true
+  data: {
+    count: number
+    results: DistributeUserResult[]
+  }
+}
+
 export const adminService = {
   listPresets: (query?: { organizationId?: string; teamId?: string }) =>
     http
@@ -59,6 +95,19 @@ export const adminService = {
       return true
     }
   },
+
+  getAdminContext: () =>
+    http
+      .get<{ success: true; data: { memberships: AdminMembership[] } }>(
+        '/v1/admin/debug/context',
+        { omitGraphToken: true } as any,
+      )
+      .then(r => r.data.data.memberships),
+
+  distributePresets: (req: DistributeRequest) =>
+    http
+      .post<DistributeResponse>('/v1/admin/presets/distribute', req, { omitGraphToken: true } as any)
+      .then(r => r.data),
 }
 
 
