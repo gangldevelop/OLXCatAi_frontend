@@ -10,7 +10,7 @@ import { SubscriptionStatus } from './components/SubscriptionStatus';
 import { CategoryUpdates } from './components/CategoryUpdates';
 import ReportingDashboardFluent from './components/ReportingDashboard';
 import { useCategories, useEmails, useSettings, useOffice } from './hooks';
-import { ensureTokens, signOut } from './lib/outlookAuth';
+import { signOut } from './lib/outlookAuth';
 import { Category, Email, UserSettings } from './types';
 
 const useStyles = makeStyles({
@@ -151,9 +151,8 @@ const App: React.FC = () => {
   const { settings, updateSettings, toggleSetting } = useSettings();
   const { isOfficeReady } = useOffice();
 
-  useEffect(() => {
-    ensureTokens().catch(() => {})
-  }, [])
+  // Don't call ensureTokens here - SignInGate handles auth
+  // Calling it here can cause conflicts and freezes
 
   const handleTabSelect = (tab: string) => {
     if (tab === 'emails') {
