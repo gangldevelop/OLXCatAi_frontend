@@ -11,6 +11,9 @@ export const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL ||
   (process.env.NODE_ENV === 'development' ? 'http://localhost:3000/api' : `${APP_ORIGIN}/api`);
 
+// Backend origin (without `/api`), used when we need to hit non-API auth endpoints directly.
+export const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/?$/, '');
+
 export const AI_ENABLE = 'true'
 
 export const WEBHOOK_CLIENT_STATE = process.env.REACT_APP_WEBHOOK_CLIENT_STATE || 'olxcat-ai-webhook-secret';

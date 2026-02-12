@@ -1,5 +1,5 @@
 import { http } from './http'
-import { APP_ORIGIN } from '../config/env'
+import { APP_ORIGIN, BACKEND_ORIGIN } from '../config/env'
 import { AuthStore, AuthUser } from '../stores/auth'
 
 type CallbackResult = {
@@ -245,12 +245,45 @@ export const ensureTokens = async () => {
   return AuthStore.getState()
 }
 
-export const signOut = async () => {
+type SignOutOptions = {
+  /**
+   * When true, we ask the backend to force the Microsoft account selector
+   * (prompt=select_account). This is used for "Switch account" flows.
+   */
+  promptSelectAccount?: boolean
+}
+
+const buildBackendLoginRedirectUrl = (options?: SignOutOptions): string => {
+  // Where the backend should send the browser back after completing the OAuth flow
+  const frontendCallbackUrl = `${APP_ORIGIN}/auth/callback`
+
+  // Hit the backend login endpoint directly so each user gets their own User row + TokenCache
+  const url = new URL('/api/auth/login', BACKEND_ORIGIN)
+  url.searchParams.set('frontend_redirect_uri', frontendCallbackUrl)
+
+  if (options?.promptSelectAccount) {
+    url.searchParams.set('prompt', 'select_account')
+  }
+
+  return url.toString()
+}
+
+export const signOut = async (options?: SignOutOptions) => {
   try {
+    // Notify backend so it can clear any server-side session/token cache
     await http.post('/auth/logout')
   } finally {
+    // Always clear all cached auth on the frontend:
+    // - JWT
+    // - x-graph-token (Graph token)
+    // - any other auth-related session state
     AuthStore.clear()
     sessionStorage.clear()
+
+    // Redirect through backend login so the user can either re-auth as themselves
+    // or pick a different Microsoft account (when promptSelectAccount is true).
+    const redirectUrl = buildBackendLoginRedirectUrl(options)
+    window.location.href = redirectUrl
   }
 }
 

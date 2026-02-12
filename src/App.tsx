@@ -16,19 +16,22 @@ import { Category, Email, UserSettings } from './types';
 const useStyles = makeStyles({
   app: {
     minHeight: '100vh',
-    backgroundColor: tokens.colorNeutralBackground1,
+    backgroundColor: '#f8fafc',
+    backgroundImage:
+      'radial-gradient(ellipse 80% 60% at 10% 20%, rgba(56, 113, 220, 0.08) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 90% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 60%)',
     display: 'flex',
     flexDirection: 'column',
   },
   header: {
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
-    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid rgba(0,0,0,0.04)',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+    padding: `${tokens.spacingVerticalS} ${tokens.spacingHorizontalXL}`,
     position: 'sticky',
     top: 0,
     zIndex: 10,
     '@media (max-width: 600px)': {
-      padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalXS}`,
+      padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
     },
   },
   headerContent: {
@@ -50,17 +53,30 @@ const useStyles = makeStyles({
   logo: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+    gap: '12px',
+  },
+  logoIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '36px',
+    height: '36px',
+    borderRadius: '10px',
+    background: 'linear-gradient(135deg, #0f6cbd 0%, #3b82f6 100%)',
+    color: '#ffffff',
+    flexShrink: 0,
   },
   logoText: {
-    fontSize: tokens.fontSizeBase400,
-    fontWeight: tokens.fontWeightSemibold,
-    color: tokens.colorBrandForeground1,
+    fontSize: '18px',
+    fontWeight: '700' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+    lineHeight: '1.2',
     '@media (max-width: 768px)': {
-      fontSize: tokens.fontSizeBase300,
+      fontSize: '16px',
     },
     '@media (max-width: 400px)': {
-      fontSize: tokens.fontSizeBase200,
+      fontSize: '14px',
     },
   },
   main: {
@@ -70,45 +86,70 @@ const useStyles = makeStyles({
     flexDirection: 'column',
   },
   navigation: {
-    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
-    backgroundColor: tokens.colorNeutralBackground1,
-    overflow: 'visible',
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
+    borderBottom: '1px solid #f1f5f9',
+    backgroundColor: '#ffffff',
+    overflow: 'hidden',
   },
   tabsWrap: {
     display: 'flex',
     justifyContent: 'flex-start',
     alignItems: 'center',
     width: '100%',
-    maxWidth: '320px',
+    maxWidth: '100%',
+    overflow: 'hidden',
     '& [role="tab"]': {
-      minWidth: 'auto',
-      padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalXS}`,
-      fontSize: tokens.fontSizeBase200,
+      minWidth: 0,
+      flex: 1,
+      padding: '6px 8px',
+      fontSize: '11px',
       whiteSpace: 'nowrap',
-      flexShrink: 0,
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      flexShrink: 1,
+      color: '#64748b',
+      borderRadius: '8px',
+    },
+    '& [role="tab"]:hover': {
+      color: '#1e293b',
+      backgroundColor: '#f0f7ff',
+    },
+    '& [role="tab"][aria-selected="true"]': {
+      color: '#0f6cbd',
+      fontWeight: '600' as any,
+      backgroundColor: '#f0f7ff',
     },
     '& [role="tab"] [data-icon]': {
-      width: '14px',
-      height: '14px',
-      marginRight: '3px',
+      width: '12px',
+      height: '12px',
+      marginRight: '4px',
+      color: 'inherit',
+      flexShrink: 0,
     },
     '& [role="tab"] span': {
-      fontSize: tokens.fontSizeBase200,
+      fontSize: '11px',
       lineHeight: '1.2',
-      fontWeight: tokens.fontWeightRegular,
+      fontWeight: 'inherit',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
     },
   },
   navigationTitle: {
-    fontSize: tokens.fontSizeBase300,
-    fontWeight: tokens.fontWeightSemibold,
-    color: tokens.colorNeutralForeground1,
+    fontSize: '15px',
+    fontWeight: '600' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
     '@media (max-width: 768px)': {
-      fontSize: tokens.fontSizeBase200,
+      fontSize: '13px',
     },
     '@media (max-width: 400px)': {
-      fontSize: tokens.fontSizeBase100,
+      fontSize: '12px',
     },
+  },
+  signOutButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
   },
   burgerMenu: {
     display: 'none',
@@ -118,7 +159,8 @@ const useStyles = makeStyles({
     minHeight: 0,
     overflowY: 'auto',
     overflowX: 'auto',
-    backgroundColor: tokens.colorNeutralBackground1,
+    backgroundColor: 'transparent',
+    maxWidth: '100%',
   },
   menuItem: {
     display: 'flex',
@@ -134,14 +176,15 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase300,
   },
   activeMenuItem: {
-    backgroundColor: tokens.colorBrandBackground2,
-    color: tokens.colorBrandForeground1,
+    backgroundColor: '#f0f7ff',
+    color: '#0f6cbd',
   },
 });
 
 const App: React.FC = () => {
   const styles = useStyles();
   const [selectedTab, setSelectedTab] = useState<string>('home');
+  const [homeSubview, setHomeSubview] = useState<'dashboard' | 'categories'>('dashboard');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [emailsCategoryFilter, setEmailsCategoryFilter] = useState<{ categoryId?: string; folderId?: string } | null>(null)
   const [selectedEmail, setSelectedEmail] = useState<Email | null>(null)
@@ -159,10 +202,15 @@ const App: React.FC = () => {
       setEmailsCategoryFilter(null);
     }
     setSelectedTab(tab);
+    setHomeSubview('dashboard');
     setIsMenuOpen(false);
   };
 
   const handleNavigate = (section: string, options?: { filterCategoryId?: string; filterFolderId?: string }) => {
+    if (section === 'categories') {
+      setHomeSubview('categories');
+      return;
+    }
     if (section === 'emails') {
       setEmailsCategoryFilter({ categoryId: options?.filterCategoryId, folderId: options?.filterFolderId });
       setSelectedEmail(null);
@@ -230,15 +278,7 @@ const App: React.FC = () => {
   const renderContent = () => {
     switch (selectedTab) {
       case 'home':
-        return (
-          <Dashboard
-            emails={emails}
-            categories={categories}
-            onNavigate={handleNavigate}
-          />
-        );
-      case 'categories':
-        return (
+        return homeSubview === 'categories' ? (
           <CategoryManager
             categories={categories}
             onCategoryChange={handleCategoryChange}
@@ -247,6 +287,13 @@ const App: React.FC = () => {
             onDeleteCategory={deleteCategory}
             onToggleCategoryActive={toggleCategoryActive}
             onImportFromOutlook={importFromOutlook}
+            onBack={() => setHomeSubview('dashboard')}
+          />
+        ) : (
+          <Dashboard
+            emails={emails}
+            categories={categories}
+            onNavigate={handleNavigate}
           />
         );
       case 'emails':
@@ -274,7 +321,7 @@ const App: React.FC = () => {
         );
       case 'reports':
         return (
-          <div style={{ padding: tokens.spacingHorizontalS }}>
+          <div style={{ padding: tokens.spacingHorizontalXL }}>
             <ReportingDashboardFluent categories={categories} />
           </div>
         );
@@ -302,11 +349,32 @@ const App: React.FC = () => {
       <header className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.logo}>
-            <FolderRegular />
+            <div className={styles.logoIcon}>
+              <FolderRegular />
+            </div>
             <Text className={styles.logoText}>OLXCatAI</Text>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Button size="small" onClick={async () => { await signOut(); window.location.reload(); }}>Sign Out</Button>
+            <Button
+              size="small"
+              className={styles.signOutButton}
+              appearance="secondary"
+              onClick={async () => {
+                await signOut()
+              }}
+            >
+              Sign Out
+            </Button>
+            <Button
+              size="small"
+              className={styles.signOutButton}
+              appearance="secondary"
+              onClick={async () => {
+                await signOut({ promptSelectAccount: true })
+              }}
+            >
+              Switch account
+            </Button>
           </div>
         </div>
       </header>

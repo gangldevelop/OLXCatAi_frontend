@@ -4,9 +4,6 @@ import { ORGANIZATION_ID } from '../config/env'
 import { notifyError, notifySuccess } from '../lib/notify'
 import {
   Button,
-  Card,
-  CardHeader,
-  CardPreview,
   Dialog,
   DialogBody,
   DialogContent,
@@ -38,8 +35,47 @@ import {
 import { DeleteRegular, ShieldRegular } from '@fluentui/react-icons'
 
 const useStyles = makeStyles({
+  card: {
+    padding: '20px 24px',
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    overflow: 'hidden',
+  },
+  cardHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    marginBottom: '16px',
+    paddingBottom: '14px',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  cardHeaderIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: '#f0f7ff',
+    color: '#0f6cbd',
+    flexShrink: 0,
+  },
+  cardHeaderText: {
+    fontSize: '15px',
+    fontWeight: '600' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+  },
   grid: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
-  controlsBar: { display: 'flex', gap: tokens.spacingHorizontalS, alignItems: 'center', marginBottom: tokens.spacingVerticalS },
+  controlsBar: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+    marginBottom: tokens.spacingVerticalS,
+    flexWrap: 'wrap',
+  },
   responsiveTable: { width: '100%' },
   truncatedCell: {
     maxWidth: '220px',
@@ -48,8 +84,23 @@ const useStyles = makeStyles({
     whiteSpace: 'nowrap',
     display: 'inline-block',
     verticalAlign: 'bottom',
+    fontSize: '13px',
+    color: '#1e293b',
   },
   actionsCell: { textAlign: 'right' },
+  primaryButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+    background: 'linear-gradient(135deg, #0f6cbd 0%, #2563eb 100%) !important',
+    border: 'none !important',
+    boxShadow: '0 2px 8px rgba(15, 108, 189, 0.3)',
+  },
+  secondaryButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+  },
 })
 
 type Membership = {
@@ -283,16 +334,20 @@ export const AdminPresets: React.FC<{ organizationId?: string; teamId?: string }
 
   return (
     <>
-    <Card>
-      <CardHeader image={<ShieldRegular />} header={<Text weight="semibold">Admin Presets</Text>} />
-      <CardPreview>
+    <div className={styles.card}>
+      <div className={styles.cardHeader}>
+        <div className={styles.cardHeaderIcon}>
+          <ShieldRegular />
+        </div>
+        <Text className={styles.cardHeaderText}>Admin Presets</Text>
+      </div>
         <div className={styles.grid}>
           <div className={styles.controlsBar}>
             <Input value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="Search presets" style={{ flex: 1, minWidth: 140 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Menu>
                 <MenuTrigger>
-                  <MenuButton size="small" appearance="secondary">Scope: {scopeLabel}</MenuButton>
+                  <MenuButton size="small" appearance="secondary" className={styles.secondaryButton}>Scope: {scopeLabel}</MenuButton>
                 </MenuTrigger>
                 <MenuPopover>
                   <MenuList>
@@ -307,12 +362,12 @@ export const AdminPresets: React.FC<{ organizationId?: string; teamId?: string }
                   </MenuList>
                 </MenuPopover>
               </Menu>
-              <Button size="small" appearance="primary" onClick={openCreate}>Create Preset</Button>
-              <Button size="small" appearance="secondary" onClick={() => { setDistributeOpen(true); setResults(null) }}>Apply to Users</Button>
+              <Button size="small" appearance="primary" className={styles.primaryButton} onClick={openCreate}>Create Preset</Button>
+              <Button size="small" appearance="secondary" className={styles.secondaryButton} onClick={() => { setDistributeOpen(true); setResults(null) }}>Apply to Users</Button>
               <Text size={100}>Pg {Math.floor(skip / top) + 1}</Text>
               <Menu>
                 <MenuTrigger>
-                  <MenuButton size="small" appearance="secondary">Actions</MenuButton>
+                  <MenuButton size="small" appearance="secondary" className={styles.secondaryButton}>Actions</MenuButton>
                 </MenuTrigger>
                 <MenuPopover>
                   <MenuList>
@@ -370,8 +425,7 @@ export const AdminPresets: React.FC<{ organizationId?: string; teamId?: string }
             </Table>
           )}
         </div>
-      </CardPreview>
-    </Card>
+      </div>
 
     {/* Create/Edit Preset Modal */}
     <Dialog open={formOpen} onOpenChange={(_, d) => setFormOpen(d.open)}>

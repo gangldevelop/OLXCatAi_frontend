@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem, MenuDivider, Checkbox, Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions } from '@fluentui/react-components'
+import { Button, Input, Spinner, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens, Tooltip, Badge, Menu, MenuTrigger, MenuButton, MenuPopover, MenuList, MenuItem, MenuDivider, Checkbox, Dialog, DialogSurface, DialogBody, DialogTitle, DialogContent, DialogActions, Dropdown, Option } from '@fluentui/react-components'
 import { notifyInfo } from '../lib/notify'
 import { emailService } from '../services/emailService'
 import { Email } from '../types'
@@ -12,14 +12,136 @@ import { BulkMoveResponse } from '../types/bulkMove'
 import { recentlyCategorizedStore } from '../stores/recentlyCategorized'
 
 const useStyles = makeStyles({
-  container: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, height: '100%', minHeight: 0, overflow: 'auto' },
-  header: { display: 'flex', gap: tokens.spacingHorizontalS, alignItems: 'center', flexWrap: 'wrap' },
-  listWrap: { flex: 1, overflow: 'auto', border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium },
+  container: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '16px',
+    padding: tokens.spacingHorizontalXL,
+    height: '100%',
+    minHeight: 0,
+    overflow: 'auto',
+  },
+  header: {
+    display: 'flex',
+    gap: '12px',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+  },
+  searchInput: {
+    borderRadius: '10px',
+    '& input': {
+      fontSize: '13px',
+    },
+  },
+  searchButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+  },
+  secondaryButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+  },
+  primaryButton: {
+    borderRadius: '12px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+    background: 'linear-gradient(135deg, #0f6cbd 0%, #2563eb 100%) !important',
+    border: 'none !important',
+    boxShadow: '0 2px 8px rgba(15, 108, 189, 0.3)',
+    transition: 'all 0.2s ease',
+    ':hover:not(:disabled)': {
+      boxShadow: '0 4px 16px rgba(15, 108, 189, 0.4)',
+      transform: 'translateY(-1px)',
+    },
+    ':active': {
+      transform: 'translateY(0)',
+    },
+  },
+  listWrap: {
+    flex: 1,
+    overflow: 'auto',
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+  },
   table: { minWidth: '320px', tableLayout: 'fixed' },
   subjectCell: { width: '60%' },
-  truncated: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' },
-  pager: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
+  truncated: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    display: 'block',
+    fontSize: '13px',
+    color: '#1e293b',
+  },
+  tableHeader: {
+    fontSize: '12px',
+    fontWeight: '600' as any,
+    color: '#64748b',
+  },
+  tableCell: {
+    fontSize: '13px',
+    color: '#1e293b',
+  },
+  tableRow: {
+    transition: 'background-color 0.2s ease',
+    ':hover': {
+      backgroundColor: '#f0f7ff',
+    },
+  },
+  pager: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '12px',
+    alignItems: 'center',
+    padding: '12px 0',
+    justifyContent: 'space-between',
+  },
+  pagerGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+  },
+  pagerText: {
+    fontSize: '13px',
+    color: '#64748b',
+    whiteSpace: 'nowrap',
+  },
+  pagerButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+  },
+  pageSizeDropdown: {
+    minWidth: '72px',
+    '& .fui-Dropdown': {
+      borderRadius: '10px',
+    },
+  },
   narrowHide: { '@media (max-width: 420px)': { display: 'none' } },
+  error: {
+    fontSize: '13px',
+    color: '#dc2626',
+    backgroundColor: '#fef2f2',
+    padding: '8px 12px',
+    borderRadius: '10px',
+    border: '1px solid #fecaca',
+  },
+  dialogSurface: {
+    borderRadius: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    border: '1px solid rgba(0,0,0,0.04)',
+  },
+  dialogTable: {
+    maxHeight: '280px',
+    overflow: 'auto',
+    border: '1px solid #f1f5f9',
+    borderRadius: '10px',
+  },
 })
 
 type Props = {
@@ -198,32 +320,32 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <Input value={q} onChange={(_, d) => setQ(d.value)} placeholder="Search emails" style={{ width: 240 }} />
-        <Button size="small" onClick={() => { setSkip(0); setDebouncedQ(q) }}>Search</Button>
+        <Input value={q} onChange={(_, d) => setQ(d.value)} placeholder="Search emails" className={styles.searchInput} style={{ width: 240 }} />
+        <Button size="small" className={styles.searchButton} appearance="secondary" onClick={() => { setSkip(0); setDebouncedQ(q) }}>Search</Button>
         {loading && <Spinner size="tiny" />}
-        {error && <Text color="danger">{error}</Text>}
+        {error && <Text className={styles.error} role="alert">{error}</Text>}
         {!loading && (
-          <Button className={styles.narrowHide} size="small" appearance="secondary" onClick={() => { setSkip(0); fetchEmails(debouncedQ, top, 0); notifyInfo('Refreshed', 'Latest categorization applied'); }}>Refresh</Button>
+          <Button className={`${styles.narrowHide} ${styles.secondaryButton}`} size="small" appearance="secondary" onClick={() => { setSkip(0); fetchEmails(debouncedQ, top, 0); notifyInfo('Refreshed', 'Latest categorization applied'); }}>Refresh</Button>
         )}
-        <Button size="small" appearance="primary" disabled={selectedIds.size === 0} onClick={openPredictivePlan}>AI Categorize</Button>
+        <Button size="small" appearance="primary" className={styles.primaryButton} disabled={selectedIds.size === 0} onClick={openPredictivePlan}>AI Categorize</Button>
       </div>
 
       <div className={styles.listWrap}>
         <Table size="small" className={styles.table}>
           <TableHeader>
             <TableRow>
-              <TableHeaderCell>
+              <TableHeaderCell className={styles.tableHeader}>
                 <Checkbox checked={headerAllChecked ? true : headerIndeterminate ? 'mixed' : false} onChange={toggleSelectAllCurrentPage} />
               </TableHeaderCell>
-              <TableHeaderCell>Subject</TableHeaderCell>
-              <TableHeaderCell className={styles.narrowHide}>From</TableHeaderCell>
-              <TableHeaderCell className={styles.narrowHide}>Date</TableHeaderCell>
-              <TableHeaderCell>St</TableHeaderCell>
+              <TableHeaderCell className={styles.tableHeader}>Subject</TableHeaderCell>
+              <TableHeaderCell className={`${styles.narrowHide} ${styles.tableHeader}`}>From</TableHeaderCell>
+              <TableHeaderCell className={`${styles.narrowHide} ${styles.tableHeader}`}>Date</TableHeaderCell>
+              <TableHeaderCell className={styles.tableHeader}>St</TableHeaderCell>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map(it => (
-              <TableRow key={it.id} onClick={() => onSelect(it)} style={{ cursor: 'pointer' }}>
+              <TableRow key={it.id} className={styles.tableRow} onClick={() => onSelect(it)} style={{ cursor: 'pointer' }}>
                 <TableCell>
                   <Checkbox
                     checked={selectedIds.has(it.id)}
@@ -231,22 +353,22 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
                     onChange={() => toggleSelectOne(it.id)}
                   />
                 </TableCell>
-                <TableCell className={styles.subjectCell}>
+                <TableCell className={`${styles.subjectCell} ${styles.tableCell}`}>
                   <Tooltip content={it.subject} relationship="label">
                     <span className={styles.truncated}>{it.subject}</span>
                   </Tooltip>
                 </TableCell>
-                <TableCell className={styles.narrowHide}>
+                <TableCell className={`${styles.narrowHide} ${styles.tableCell}`}>
                   <Tooltip content={it.sender} relationship="label">
                     <span className={styles.truncated}>{it.sender}</span>
                   </Tooltip>
                 </TableCell>
-                <TableCell className={styles.narrowHide}>
+                <TableCell className={`${styles.narrowHide} ${styles.tableCell}`}>
                   <span>{it.receivedDate.toLocaleString()}</span>
                 </TableCell>
-                <TableCell>
+                <TableCell className={styles.tableCell}>
                   <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Badge appearance="filled" color={it.isProcessed ? 'success' : 'subtle'} size="small">
+                    <Badge appearance="filled" color={it.isProcessed ? 'success' : 'subtle'} size="small" style={{ fontSize: '11px', borderRadius: '6px' }}>
                       {it.isProcessed ? 'Done' : 'New'}
                     </Badge>
                     {Array.isArray(it.categories) && it.categories.length > 0 && it.categories.slice(0, 3).map(label => (
@@ -264,18 +386,30 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
       </div>
 
       <div className={styles.pager}>
-        <Button size="small" onClick={prevPage} disabled={skip === 0}>Previous</Button>
-        <Text size={100}>Page {Math.floor(skip / top) + 1}</Text>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <Button size="small" appearance={top === 10 ? 'primary' : 'secondary'} onClick={() => { setTop(10); setSkip(0) }}>10</Button>
-          <Button size="small" appearance={top === 20 ? 'primary' : 'secondary'} onClick={() => { setTop(20); setSkip(0) }}>20</Button>
-          <Button size="small" appearance={top === 50 ? 'primary' : 'secondary'} onClick={() => { setTop(50); setSkip(0) }}>50</Button>
+        <div className={styles.pagerGroup}>
+          <Button size="small" className={styles.pagerButton} appearance="secondary" onClick={prevPage} disabled={skip === 0}>Prev</Button>
+          <Text className={styles.pagerText}>Page {Math.floor(skip / top) + 1}</Text>
+          <Button size="small" className={styles.pagerButton} appearance="secondary" onClick={nextPage}>Next</Button>
         </div>
-        <Button size="small" onClick={nextPage}>Next</Button>
+        <div className={styles.pagerGroup}>
+          <Text className={styles.pagerText}>Show</Text>
+          <Dropdown
+            value={String(top)}
+            onOptionSelect={(_, d) => { setTop(Number(d.optionValue)); setSkip(0); }}
+            size="small"
+            className={styles.pageSizeDropdown}
+            appearance="outline"
+          >
+            <Option value="10">10</Option>
+            <Option value="20">20</Option>
+            <Option value="50">50</Option>
+          </Dropdown>
+          <Text className={styles.pagerText}>per page</Text>
+        </div>
       </div>
 
       <Dialog open={planOpen} onOpenChange={(_, d) => setPlanOpen(d.open)}>
-        <DialogSurface>
+        <DialogSurface className={styles.dialogSurface}>
           <DialogBody>
             <DialogTitle>AI Categorization Plan</DialogTitle>
             <DialogContent>
@@ -287,7 +421,7 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
                     <Badge appearance="filled" color="brand" size="small">To move: {planResponse.data.results.filter(r => r.reason === 'dry_run').length}</Badge>
                     <Badge appearance="filled" color="important" size="small">Skipped: {planResponse.data.results.filter(r => r.reason !== 'dry_run').length}</Badge>
                   </div>
-                  <div style={{ maxHeight: 280, overflow: 'auto', border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusSmall }}>
+                  <div className={styles.dialogTable}>
                     <Table size="small" className={styles.table}>
                       <TableHeader>
                         <TableRow>
@@ -321,8 +455,8 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
               )}
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" size="small" onClick={() => setPlanOpen(false)}>Close</Button>
-              <Button appearance="primary" size="small" onClick={executePredictive} disabled={!planResponse || planLoading}>Categorize</Button>
+              <Button appearance="secondary" size="small" className={styles.secondaryButton} onClick={() => setPlanOpen(false)}>Close</Button>
+              <Button appearance="primary" size="small" className={styles.primaryButton} onClick={executePredictive} disabled={!planResponse || planLoading}>Categorize</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>

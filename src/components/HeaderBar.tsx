@@ -31,7 +31,10 @@ const HeaderBar: React.FC<Props> = ({ health }) => {
 
   const handleSignOut = async () => {
     await signOut()
-    window.location.reload()
+  }
+
+  const handleSwitchAccount = async () => {
+    await signOut({ promptSelectAccount: true })
   }
 
   return (
@@ -47,6 +50,7 @@ const HeaderBar: React.FC<Props> = ({ health }) => {
           {auth.user ? (
             <>
               <Text size={200}>{auth.user.name} • {auth.user.email}</Text>
+              <Button size="small" onClick={handleSwitchAccount}>Switch account</Button>
               <Button size="small" onClick={handleSignOut}>Sign Out</Button>
             </>
           ) : (
