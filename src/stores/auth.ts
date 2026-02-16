@@ -67,12 +67,49 @@ class AuthStoreImpl {
   setAll(next: Partial<AuthState>) {
     this.state = { ...this.state, ...next }
     writeToSession(this.state)
+    if (process.env.NODE_ENV === 'development') {
+      const jwtLen = this.state.jwt ? this.state.jwt.length : 0
+      const graphLen = this.state.graphToken ? this.state.graphToken.length : 0
+      const decodeJwtPayload = (token: string): any | null => {
+        try {
+          const part = token.split('.')[1]
+          if (!part) return null
+          const b64 = part.replace(/-/g, '+').replace(/_/g, '/')
+          const json = atob(b64)
+          return JSON.parse(json)
+        } catch {
+          return null
+        }
+      }
+      const graphClaims = this.state.graphToken ? decodeJwtPayload(this.state.graphToken) : null
+      const graphAud = typeof graphClaims?.aud === 'string' ? graphClaims.aud : undefined
+      const graphExp = typeof graphClaims?.exp === 'number' ? graphClaims.exp : undefined
+      const graphScp = typeof graphClaims?.scp === 'string' ? graphClaims.scp : undefined
+      const nowSec = Math.floor(Date.now() / 1000)
+      // Do not log token contents
+      // eslint-disable-next-line no-console
+      console.log('[AuthStore] setAll', {
+        hasJwt: jwtLen > 0,
+        jwtLen,
+        hasGraphToken: graphLen > 0,
+        graphLen,
+        graphAud,
+        graphExp,
+        graphExpInSec: typeof graphExp === 'number' ? graphExp - nowSec : undefined,
+        graphScopesCount: typeof graphScp === 'string' ? graphScp.split(' ').filter(Boolean).length : undefined,
+        hasUser: !!this.state.user,
+      })
+    }
     this.notify()
   }
 
   clear() {
     this.state = { jwt: null, graphToken: null, user: null }
     writeToSession(this.state)
+    if (process.env.NODE_ENV === 'development') {
+      // eslint-disable-next-line no-console
+      console.log('[AuthStore] clear')
+    }
     this.notify()
   }
 

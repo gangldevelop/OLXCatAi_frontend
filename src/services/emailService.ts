@@ -52,9 +52,9 @@ export const emailService = {
       const headers: Record<string, string> = {}
       if (cached?.etag) headers['If-None-Match'] = cached.etag
       const response = await http.get<{ success: boolean; data: BackendEmailMessage[] }>(
-        '/emails/search',
+        `/emails/search/${encodeURIComponent(q)}`,
         {
-          params: { q, top, skip },
+          params: { top, skip },
           headers,
           signal,
           validateStatus: (s: number) => (s >= 200 && s < 300) || s === 304,

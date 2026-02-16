@@ -72,7 +72,7 @@ export const useEmails = () => {
 
   const assignCategory = useCallback(async (emailId: string, categoryId: string) => {
     try {
-      await emailService.feedback(emailId, categoryId, true)
+      await emailService.categorize(emailId, [categoryId])
       setEmails(prev => prev.map(email => email.id === emailId ? { ...email, categoryId, isProcessed: true } : email))
     } catch {}
   }, [])

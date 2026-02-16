@@ -18,7 +18,7 @@ import { AuthStore } from '../stores/auth';
 
 const useStyles = makeStyles({
   container: {
-    padding: tokens.spacingHorizontalM,
+    padding: tokens.spacingHorizontalXL,
     height: '100%',
     minHeight: 0,
   },
@@ -26,21 +26,23 @@ const useStyles = makeStyles({
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-    gap: tokens.spacingHorizontalXS,
+    gap: '12px',
     marginBottom: tokens.spacingVerticalM,
     '@media (max-width: 480px)': {
       gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: tokens.spacingHorizontalXS,
+      gap: '10px',
     },
     '@media (max-width: 360px)': {
-      gridTemplateColumns: 'repeat(2, 1fr)'
-    }
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '8px',
+    },
   },
   monitoringStrip: {
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground1,
-    padding: tokens.spacingHorizontalM,
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    padding: '20px 24px',
     marginBottom: tokens.spacingVerticalM,
     display: 'flex',
     alignItems: 'center',
@@ -48,21 +50,39 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalS,
     flexWrap: 'wrap',
   },
+  monitoringIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: '#f0f7ff',
+    color: '#0f6cbd',
+    flexShrink: 0,
+  },
   categorySection: {
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground1,
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
     marginBottom: tokens.spacingVerticalM,
     overflow: 'hidden',
   },
   categoryHeader: {
-    padding: tokens.spacingHorizontalM,
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
+    padding: '16px 24px',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #f1f5f9',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: tokens.spacingHorizontalS,
+  },
+  categoryHeaderText: {
+    fontSize: '15px',
+    fontWeight: '600' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
   },
   categoryList: {
     display: 'flex',
@@ -75,74 +95,112 @@ const useStyles = makeStyles({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: tokens.spacingHorizontalS,
-    padding: tokens.spacingHorizontalM,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    padding: '14px 24px',
+    borderBottom: '1px solid #f1f5f9',
     cursor: 'pointer',
+    transition: 'background-color 0.2s ease',
     '&:last-child': { borderBottom: 'none' },
-    '&:hover': { backgroundColor: tokens.colorNeutralBackground2 },
+    '&:hover': { backgroundColor: '#f0f7ff' },
   },
   categoryMeta: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+    gap: '12px',
     minWidth: 0,
   },
   categoryDot: { width: '8px', height: '8px', borderRadius: '50%' },
-  categoryName: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
+  categoryName: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontSize: '13px',
+    color: '#1e293b',
+    fontWeight: '500' as any,
+  },
   statCard: {
-    padding: tokens.spacingHorizontalS,
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground1,
+    padding: '20px 16px',
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
     textAlign: 'center',
-    '@media (max-width: 480px)': {
-      padding: tokens.spacingHorizontalS,
+    transition: 'all 0.2s ease',
+    ':hover': {
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     },
-    '@media (max-width: 360px)': { padding: tokens.spacingHorizontalXS },
+    '@media (max-width: 480px)': {
+      padding: '16px 12px',
+    },
+    '@media (max-width: 360px)': { padding: '14px 10px' },
+  },
+  statIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: '#f0f7ff',
+    color: '#0f6cbd',
+    margin: '0 auto',
+    marginBottom: tokens.spacingVerticalXS,
   },
   statHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: tokens.spacingHorizontalXS,
+    gap: '8px',
     marginBottom: tokens.spacingVerticalXS,
   },
   statValue: {
-    fontSize: tokens.fontSizeBase500,
-    fontWeight: tokens.fontWeightSemibold,
+    fontSize: '22px',
+    fontWeight: '700' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+    lineHeight: '1.2',
   },
   statDescription: {
-    fontSize: tokens.fontSizeBase100,
-    color: tokens.colorNeutralForeground3,
+    fontSize: '12px',
+    color: '#94a3b8',
+    lineHeight: '1.4',
   },
-  quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: tokens.spacingHorizontalS, marginBottom: tokens.spacingVerticalM },
+  quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: tokens.spacingVerticalM },
   actionCard: {
     padding: tokens.spacingHorizontalM,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     '&:hover': {
-      backgroundColor: tokens.colorNeutralBackground2,
+      backgroundColor: '#f0f7ff',
+      boxShadow: '0 2px 8px rgba(15, 108, 189, 0.12)',
     },
   },
   actionHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
+    gap: '8px',
     marginBottom: tokens.spacingVerticalXS,
   },
-  recentActivity: { border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden' },
+  recentActivity: {
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+  },
   activityHeader: {
-    padding: tokens.spacingHorizontalM,
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
+    padding: '16px 24px',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #f1f5f9',
     position: 'sticky',
     top: 0,
   },
   activityItem: {
-    padding: tokens.spacingHorizontalM,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    padding: '14px 24px',
+    borderBottom: '1px solid #f1f5f9',
     '&:last-child': {
       borderBottom: 'none',
     },
@@ -163,6 +221,27 @@ const useStyles = makeStyles({
     width: '8px',
     height: '8px',
     borderRadius: '50%',
+  },
+  manageButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+  },
+  startMonitoringButton: {
+    borderRadius: '12px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+    background: 'linear-gradient(135deg, #0f6cbd 0%, #2563eb 100%) !important',
+    border: 'none !important',
+    boxShadow: '0 2px 8px rgba(15, 108, 189, 0.3)',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      boxShadow: '0 4px 16px rgba(15, 108, 189, 0.4)',
+      transform: 'translateY(-1px)',
+    },
+    ':active': {
+      transform: 'translateY(0)',
+    },
   },
 });
 
@@ -213,49 +292,42 @@ const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className={styles.container}>
       <div className={styles.monitoringStrip}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <MailRegular />
-          <Text weight="semibold">Email Monitoring</Text>
-          <Badge appearance={subscriptions.some(s => s.isActive) ? 'filled' : 'tint'} color={subscriptions.some(s => s.isActive) ? 'success' : 'subtle'} size="small" style={{ fontSize: tokens.fontSizeBase100 }}>
-            {subscriptions.some(s => s.isActive) ? 'Active' : 'Inactive'}
-          </Badge>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className={styles.monitoringIcon}>
+            <MailRegular />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Text className={styles.categoryHeaderText}>Email Monitoring</Text>
+            <Badge appearance={subscriptions.some(s => s.isActive) ? 'filled' : 'tint'} color={subscriptions.some(s => s.isActive) ? 'success' : 'subtle'} size="small" style={{ fontSize: '11px' }}>
+              {subscriptions.some(s => s.isActive) ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
         </div>
         {graphToken && !subscriptions.some(s => s.isActive) && (
-          <Button appearance="primary" size="small" onClick={() => startEmailMonitoring()} disabled={loading}>
+          <Button appearance="primary" size="small" className={styles.startMonitoringButton} onClick={() => startEmailMonitoring()} disabled={loading}>
             Start Monitoring
           </Button>
         )}
         {!graphToken && (
-          <Text size={200} color="neutral">Sign in to Outlook to enable monitoring</Text>
+          <Text size={200} style={{ color: '#64748b', fontSize: '13px' }}>Sign in to Outlook to enable monitoring</Text>
         )}
       </div>
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
-          <div className={styles.statHeader}>
+          <div className={styles.statIcon}>
             <MailRegular />
-            <Text weight="semibold">Total Emails</Text>
           </div>
+          <Text className={styles.categoryHeaderText} style={{ marginBottom: 4 }}>Total Emails</Text>
           <div className={styles.statValue}>{totalEmails}</div>
           <div className={styles.statDescription}>Emails in your inbox</div>
         </div>
 
-        {/* <div className={styles.statCard}>
-          <div className={styles.statHeader}>
-            <CheckmarkRegular />
-            <Text weight="semibold">Processed</Text>
-          </div>
-          <div className={styles.statValue}>{processedEmails}</div>
-          <div className={styles.statDescription}>
-            {processingProgress.toFixed(1)}% complete
-          </div>
-        </div> */}
-
         <div className={styles.statCard}>
-          <div className={styles.statHeader}>
+          <div className={styles.statIcon}>
             <FolderRegular />
-            <Text weight="semibold">Categorized</Text>
           </div>
+          <Text className={styles.categoryHeaderText} style={{ marginBottom: 4 }}>Categorized</Text>
           <div className={styles.statValue}>{categorizedEmails}</div>
           <div className={styles.statDescription}>
             Emails organized into folders
@@ -274,8 +346,8 @@ const Dashboard: React.FC<DashboardProps> = ({
 
       <div className={styles.categorySection}>
         <div className={styles.categoryHeader}>
-          <Text weight="semibold">Categories</Text>
-          <Button size="small" appearance="secondary" onClick={() => onNavigate('categories')}>Manage</Button>
+          <Text className={styles.categoryHeaderText}>Categories</Text>
+          <Button size="small" appearance="secondary" className={styles.manageButton} onClick={() => onNavigate('categories')}>Manage</Button>
         </div>
         <div className={styles.categoryList}>
           {categories.map(cat => {

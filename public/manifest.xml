@@ -13,13 +13,11 @@
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="OLXCatAI" />
   <Description DefaultValue="AI-Powered Email Categorization Add-In for Microsoft Outlook. Automatically categorize emails using intelligent AI analysis." />
-  <IconUrl DefaultValue=" https://de62c8cde7bc.ngrok-free.app/icon-32.png" />
-  <HighResolutionIconUrl DefaultValue=" https://de62c8cde7bc.ngrok-free.app/icon-64.png" />
+  <IconUrl DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com/icon-64.png" />
   <SupportUrl DefaultValue="https://github.com/your-org/olxcat-ai" />
   <AppDomains>
-    <AppDomain>https://ef7a6356e1e0.ngrok-free.app</AppDomain>
-    <AppDomain> https://de62c8cde7bc.ngrok-free.app</AppDomain>
-    <AppDomain>https://your-production-domain.com</AppDomain>
+    <AppDomain>https://criteria-previously-washing-continues.trycloudflare.com</AppDomain>
     <AppDomain>https://login.microsoftonline.com</AppDomain>
     <AppDomain>https://login.live.com</AppDomain>
     <AppDomain>https://accounts.microsoft.com</AppDomain>
@@ -42,15 +40,15 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue=" https://de62c8cde7bc.ngrok-free.app" />
+        <SourceLocation DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com" />
         <RequestedHeight>450</RequestedHeight>
       </DesktopSettings>
       <TabletSettings>
-        <SourceLocation DefaultValue=" https://de62c8cde7bc.ngrok-free.app" />
+        <SourceLocation DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com" />
         <RequestedHeight>450</RequestedHeight>
       </TabletSettings>
       <PhoneSettings>
-        <SourceLocation DefaultValue=" https://de62c8cde7bc.ngrok-free.app" />
+        <SourceLocation DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com" />
       </PhoneSettings>
     </Form>
   </FormSettings>
@@ -101,13 +99,13 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="icon-16" DefaultValue=" https://de62c8cde7bc.ngrok-free.app/icon-16.png" />
-        <bt:Image id="icon-32" DefaultValue=" https://de62c8cde7bc.ngrok-free.app/icon-32.png" />
-        <bt:Image id="icon-80" DefaultValue=" https://de62c8cde7bc.ngrok-free.app/icon-80.png" />
+        <bt:Image id="icon-16" DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com/icon-16.png" />
+        <bt:Image id="icon-32" DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com/icon-32.png" />
+        <bt:Image id="icon-80" DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="functionFile" DefaultValue=" https://de62c8cde7bc.ngrok-free.app/function-file.html" />
-        <bt:Url id="messageReadTaskPaneUrl" DefaultValue=" https://de62c8cde7bc.ngrok-free.app" />
+        <bt:Url id="functionFile" DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com/function-file.html" />
+        <bt:Url id="messageReadTaskPaneUrl" DefaultValue="https://criteria-previously-washing-continues.trycloudflare.com" />
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="groupLabel" DefaultValue="OLXCatAI" />

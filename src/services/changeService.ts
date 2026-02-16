@@ -1,4 +1,5 @@
 import { http } from '../lib/http'
+import { AuthStore } from '../stores/auth'
 
 type ChangeItemEmailMoved = {
   type: 'email:moved'
@@ -32,6 +33,8 @@ class ChangeService {
   private currentVersion: number = -1
   private backoffMs: number = 0
   private visListener?: () => void
+  private corsFailureCount = 0
+  private corsDisabled = false
 
   constructor() {
     const saved = sessionStorage.getItem('changes_version')
@@ -44,9 +47,33 @@ class ChangeService {
   subscribe(listener: Listener) {
     this.listeners.add(listener)
     const unsubscribe = () => this.listeners.delete(listener)
-    if (!this.running) {
+    
+    // Only start polling if we have auth tokens
+    const { jwt } = AuthStore.getState()
+    if (!this.running && jwt) {
       this.start()
+    } else if (!jwt) {
+      // If no auth, wait for auth and then start
+      const checkAuth = () => {
+        const { jwt: currentJwt } = AuthStore.getState()
+        if (currentJwt && !this.running && this.listeners.size > 0) {
+          this.start()
+        }
+      }
+      // Check immediately
+      checkAuth()
+      // Subscribe to auth changes
+      const unsubAuth = AuthStore.subscribe(() => {
+        checkAuth()
+      })
+      // Clean up auth subscription when listener unsubscribes
+      const originalUnsubscribe = unsubscribe
+      return () => {
+        originalUnsubscribe()
+        unsubAuth()
+      }
     }
+    
     return unsubscribe
   }
 
@@ -63,19 +90,36 @@ class ChangeService {
   }
 
   private async pollOnce(timeoutMs: number): Promise<'again'> {
+    // If CORS is disabled due to repeated failures, stop polling
+    if (this.corsDisabled) {
+      return 'again'
+    }
+    
+    // Don't poll if we don't have auth tokens
+    const { jwt } = AuthStore.getState()
+    if (!jwt) {
+      // Wait a bit and try again (auth might be in progress)
+      await this.delay(2000)
+      return 'again'
+    }
+
     const headers: Record<string, string> = {}
     headers['If-None-Match'] = `"${this.currentVersion}"`
 
-    const response = await http.get<ChangesResponse>(
-      '/changes',
-      {
-        params: { timeoutMs },
-        headers,
-        omitGraphToken: true as any,
-        // Accept 304/429 without throwing so we can manage backoff ourselves
-        validateStatus: (s: number) => (s >= 200 && s < 300) || s === 304 || s === 429,
-      } as any
-    )
+    try {
+      const response = await http.get<ChangesResponse>(
+        '/changes',
+        {
+          params: { timeoutMs },
+          headers,
+          omitGraphToken: true as any,
+          // Accept 304/429 without throwing so we can manage backoff ourselves
+          validateStatus: (s: number) => (s >= 200 && s < 300) || s === 304 || s === 429,
+        } as any
+      )
+      
+      // Reset CORS failure count on successful request
+      this.corsFailureCount = 0
 
     if (response.status === 304) {
       this.backoffMs = 0
@@ -117,6 +161,41 @@ class ChangeService {
       this.emit((body as any).items as ChangeItem[])
     }
     return 'again'
+    } catch (error: any) {
+      // Handle CORS/preflight errors gracefully - backend needs to fix CORS config
+      const isCorsError = error?.message?.includes('CORS') || 
+                         error?.message?.includes('Access-Control') ||
+                         error?.code === 'ERR_NETWORK' ||
+                         (error?.response === undefined && error?.request !== undefined)
+      
+      if (isCorsError) {
+        this.corsFailureCount++
+        
+        // After 3 consecutive CORS failures, disable polling and log a warning
+        if (this.corsFailureCount >= 3 && !this.corsDisabled) {
+          this.corsDisabled = true
+          console.warn(
+            '[ChangeService] CORS preflight failures detected. Disabling change polling. ' +
+            'Backend must handle OPTIONS requests and return Access-Control-Allow-Origin header. ' +
+            'Required origin: ' + window.location.origin
+          )
+          // Stop the loop
+          this.running = false
+          return 'again'
+        }
+        
+        // Silently retry with exponential backoff - backend CORS needs to be fixed
+        this.backoffMs = this.backoffMs ? Math.min(this.backoffMs * 2, 30000) : 5000
+        await this.delay(this.backoffMs)
+        return 'again'
+      }
+      
+      // Reset CORS failure count on non-CORS errors
+      this.corsFailureCount = 0
+      
+      // Re-throw other errors
+      throw error
+    }
   }
 
   private async loop() {

@@ -7,14 +7,50 @@ import { notifyError, notifyInfo, notifySuccess } from '../lib/notify'
 import { EditRegular } from '@fluentui/react-icons'
 
 const useStyles = makeStyles({
-  container: { padding: tokens.spacingHorizontalM, border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground1 },
-  header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacingVerticalS, gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
-  listWrap: { overflowX: 'auto', overflowY: 'auto', maxHeight: '220px' },
+  container: {
+    padding: '24px',
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+  },
+  header: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: tokens.spacingVerticalS,
+    gap: tokens.spacingHorizontalS,
+    flexWrap: 'wrap',
+  },
+  headerText: {
+    fontSize: '15px',
+    fontWeight: '600' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+  },
+  listWrap: {
+    overflowX: 'auto',
+    overflowY: 'auto',
+    maxHeight: '220px',
+    borderRadius: '8px',
+  },
   table: { minWidth: '280px', tableLayout: 'fixed' },
   subjectCell: { width: 'auto' },
-  truncated: { overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'block' },
+  truncated: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    display: 'block',
+    fontSize: '13px',
+    color: '#1e293b',
+  },
   narrowHide: { '@media (max-width: 480px)': { display: 'none' } },
   actionCell: { width: '48px', textAlign: 'right' },
+  tableHeader: {
+    fontSize: '12px',
+    fontWeight: '600' as any,
+    color: '#64748b',
+  },
 })
 
 type Props = {
@@ -99,11 +135,11 @@ const RecentlyCategorized: React.FC<Props> = ({ emails, categories, onEmailUpdat
     <div className={styles.container}>
       <div className={styles.header}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          <Text weight="semibold">Recently Categorized</Text>
-          <Badge appearance="filled" color="brand" size="small">{items.length}</Badge>
+          <Text className={styles.headerText}>Recently Categorized</Text>
+          <Badge appearance="filled" color="brand" size="small" style={{ fontSize: '11px' }}>{items.length}</Badge>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <Input value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="Search" style={{ width: 140 }} />
+          <Input value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="Search" style={{ width: 140, borderRadius: '10px' }} />
           <Dropdown value={String(lookbackHours)} onOptionSelect={(_, d) => setLookbackHours(Number(d.optionValue))} style={{ minWidth: 100 }}>
             <Option value="1">Last 1 hour</Option>
             <Option value="3">Last 3 hours</Option>

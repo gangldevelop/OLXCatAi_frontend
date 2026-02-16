@@ -1,5 +1,5 @@
 import { http } from './http'
-import { APP_ORIGIN } from '../config/env'
+import { APP_ORIGIN, BACKEND_ORIGIN } from '../config/env'
 import { AuthStore, AuthUser } from '../stores/auth'
 
 type CallbackResult = {
@@ -15,6 +15,7 @@ const openDialog = (url: string): Promise<CallbackResult> => {
     let popup: Window | null = null
     let closeCheck: ReturnType<typeof setInterval> | undefined
     let timeout: ReturnType<typeof setTimeout> | undefined
+    const canUseOfficeDialog = () => !!window.Office?.context?.ui?.displayDialogAsync
     const onStorage = (e: StorageEvent) => {
       if (e.key !== 'olxcat_auth_result' || !e.newValue) return
       try {
@@ -44,8 +45,33 @@ const openDialog = (url: string): Promise<CallbackResult> => {
     }
     window.addEventListener('storage', onStorage)
     window.addEventListener('message', onMessage)
+    const openPopup = () => {
+      popup = window.open(url, 'olxcat_auth', 'width=600,height=700')
+      if (!popup) {
+        reject(new Error('Unable to open login window'))
+        return
+      }
+      closeCheck = setInterval(() => {
+        if (!popup) return
+        if (popup.closed && !resolved) {
+          cleanup()
+          reject(new Error('Login window closed'))
+        }
+      }, 500)
+      timeout = setTimeout(() => {
+        if (!resolved) {
+          cleanup()
+          reject(new Error('Login timed out'))
+        }
+      }, 120000)
+    }
+
     // Prefer Office dialog when available so auth stays as an Office modal and auto-closes
     const openOfficeDialog = () => {
+      if (!canUseOfficeDialog()) {
+        openPopup()
+        return
+      }
       window.Office.context.ui.displayDialogAsync(
         url,
         {
@@ -100,33 +126,22 @@ const openDialog = (url: string): Promise<CallbackResult> => {
     }
 
     if (window.Office && typeof window.Office.onReady === 'function') {
-      window.Office.onReady(() => openOfficeDialog())
+      window.Office.onReady(() => {
+        if (canUseOfficeDialog()) {
+          openOfficeDialog()
+        } else {
+          openPopup()
+        }
+      })
       return
     }
-    if (window.Office?.context?.ui?.displayDialogAsync) {
+    if (canUseOfficeDialog()) {
       openOfficeDialog()
       return
     }
 
     // Fallback to a real popup if Office dialog API isn't available
-    popup = window.open(url, 'olxcat_auth', 'width=600,height=700')
-    if (!popup) {
-      reject(new Error('Unable to open login window'))
-      return
-    }
-    closeCheck = setInterval(() => {
-      if (!popup) return
-      if (popup.closed && !resolved) {
-        cleanup()
-        reject(new Error('Login window closed'))
-      }
-    }, 500)
-    timeout = setTimeout(() => {
-      if (!resolved) {
-        cleanup()
-        reject(new Error('Login timed out'))
-      }
-    }, 120000)
+    openPopup()
   })
 }
 
@@ -142,12 +157,85 @@ export const ensureTokens = async () => {
     }
   } catch {}
 
-  if (!AuthStore.getState().jwt) {
-    const { data } = await http.get<{ authUrl: string }>('/auth/login', { omitGraphToken: true } as any)
-    const redirectUrl = new URL(data.authUrl)
+  // If either token is missing, fall back to the backend OAuth flow.
+  // This is required for browser testing where OfficeRuntime SSO isn't available.
+  if (!AuthStore.getState().jwt || !AuthStore.getState().graphToken) {
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Auth request timed out')), 10000)
+    })
+    
+    // Pass frontend URL to backend so it knows where to redirect after OAuth callback
+    // Backend will use this to redirect to frontend with tokens after processing /api/auth/callback
+    const frontendCallbackUrl = `${APP_ORIGIN}/auth/callback`
+    
+    const loginPromise = http.get<{ authUrl: string }>('/auth/login', { 
+      omitGraphToken: true,
+      timeout: 10000, // 10 second timeout
+      params: {
+        frontend_redirect_uri: frontendCallbackUrl, // Tell backend where to redirect after OAuth
+      },
+    } as any)
+    
+    const response = await Promise.race([loginPromise, timeoutPromise])
+    
+    // Log the full response for debugging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[Auth] Backend /auth/login response:', response)
+    }
+    
+    const { data } = response
+    
+    // Validate backend response
+    if (!data || typeof data !== 'object') {
+      console.error('[Auth] Invalid response structure:', { data, response })
+      throw new Error('Invalid response from backend: expected object with authUrl property')
+    }
+    
+    if (!data.authUrl || typeof data.authUrl !== 'string') {
+      console.error('[Auth] Missing or invalid authUrl:', { 
+        authUrl: data.authUrl, 
+        type: typeof data.authUrl,
+        fullResponse: data 
+      })
+      throw new Error(`Backend did not return a valid authUrl. Got: ${JSON.stringify(data.authUrl)}. Check backend /auth/login endpoint.`)
+    }
+    
+    // Validate APP_ORIGIN before using it
+    if (!APP_ORIGIN || !APP_ORIGIN.startsWith('http')) {
+      console.error('[Auth] Invalid APP_ORIGIN:', APP_ORIGIN)
+      throw new Error(`Invalid APP_ORIGIN configuration: "${APP_ORIGIN}". Check REACT_APP_APP_ORIGIN in .env file.`)
+    }
+    
+    // Validate authUrl is a proper URL before constructing URL object
+    if (!data.authUrl.startsWith('http://') && !data.authUrl.startsWith('https://')) {
+      console.error('[Auth] authUrl is not a valid HTTP/HTTPS URL:', data.authUrl)
+      throw new Error(`Backend returned invalid URL format: "${data.authUrl}". Must start with http:// or https://`)
+    }
+    
+    let redirectUrl: URL
+    try {
+      redirectUrl = new URL(data.authUrl)
+    } catch (e: any) {
+      console.error('[Auth] Failed to construct URL from authUrl:', {
+        authUrl: data.authUrl,
+        error: e?.message,
+        APP_ORIGIN
+      })
+      throw new Error(`Backend returned invalid URL: "${data.authUrl}". Error: ${e?.message || 'Invalid URL format'}`)
+    }
+    
     // Respect backend-provided redirect_uri (it must match Azure AD). If missing, default to our public origin.
     if (!redirectUrl.searchParams.get('redirect_uri')) {
-      redirectUrl.searchParams.set('redirect_uri', `${APP_ORIGIN}/auth-callback.html`)
+      const callbackUrl = `${APP_ORIGIN}/auth-callback.html`
+      try {
+        // Validate the callback URL before setting it
+        new URL(callbackUrl) // This will throw if invalid
+        redirectUrl.searchParams.set('redirect_uri', callbackUrl)
+      } catch (e) {
+        console.error('[Auth] Invalid callback URL:', callbackUrl)
+        throw new Error(`Failed to construct callback URL: ${callbackUrl}. Check APP_ORIGIN configuration.`)
+      }
     }
     const result = await openDialog(redirectUrl.toString())
     if (!result?.success || !result?.token) throw new Error('Authentication failed')
@@ -157,24 +245,56 @@ export const ensureTokens = async () => {
   return AuthStore.getState()
 }
 
-export const signOut = async () => {
+type SignOutOptions = {
+  /**
+   * When true, we ask the backend to force the Microsoft account selector
+   * (prompt=select_account). This is used for "Switch account" flows.
+   */
+  promptSelectAccount?: boolean
+}
+
+const buildBackendLoginRedirectUrl = (options?: SignOutOptions): string => {
+  // Where the backend should send the browser back after completing the OAuth flow
+  const frontendCallbackUrl = `${APP_ORIGIN}/auth/callback`
+
+  // Hit the backend login endpoint directly so each user gets their own User row + TokenCache
+  const url = new URL('/api/auth/login', BACKEND_ORIGIN)
+  url.searchParams.set('frontend_redirect_uri', frontendCallbackUrl)
+
+  if (options?.promptSelectAccount) {
+    url.searchParams.set('prompt', 'select_account')
+  }
+
+  return url.toString()
+}
+
+export const signOut = async (options?: SignOutOptions) => {
   try {
+    // Notify backend so it can clear any server-side session/token cache
     await http.post('/auth/logout')
   } finally {
+    // Always clear all cached auth on the frontend:
+    // - JWT
+    // - x-graph-token (Graph token)
+    // - any other auth-related session state
     AuthStore.clear()
     sessionStorage.clear()
+
+    // Redirect through backend login so the user can either re-auth as themselves
+    // or pick a different Microsoft account (when promptSelectAccount is true).
+    const redirectUrl = buildBackendLoginRedirectUrl(options)
+    window.location.href = redirectUrl
   }
 }
 
 // Acquire a fresh delegated Microsoft Graph token and store it
 export const acquireFreshGraphToken = async (): Promise<string | null> => {
   try {
-    if (window.OfficeRuntime?.auth?.getAccessToken) {
-      const token = await window.OfficeRuntime.auth.getAccessToken({ allowSignInPrompt: true })
-      if (token) {
-        AuthStore.setGraphToken(token)
-        return token
-      }
+    if (!window.OfficeRuntime?.auth?.getAccessToken) return null
+    const token = await window.OfficeRuntime.auth.getAccessToken({ allowSignInPrompt: true })
+    if (token) {
+      AuthStore.setGraphToken(token)
+      return token
     }
   } catch (error) {
     console.error('Failed to acquire fresh Graph token:', error)
