@@ -21,10 +21,12 @@
   "devDependencies": {
     "@types/node": "^16.18.0",
     "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0"
+    "@types/react-dom": "^18.2.0",
+    "office-addin-dev-certs": "^1.13.5"
   },
   "scripts": {
-    "start": "set PORT=3001&& set HTTPS=true&& set SSL_CRT_FILE=%USERPROFILE%\\.office-addin-dev-certs\\localhost.crt&& set SSL_KEY_FILE=%USERPROFILE%\\.office-addin-dev-certs\\localhost.key&& set REACT_APP_AI_ENABLE=true&& react-scripts start",
+    "install:certs": "office-addin-dev-certs install",
+    "start": "set PORT=3001&& set HTTPS=true&& set SSL_CRT_FILE=%USERPROFILE%\\.office-addin-dev-certs\\localhost.crt&& set SSL_KEY_FILE=%USERPROFILE%\\.office-addin-dev-certs\\localhost.key&& set REACT_APP_APP_ORIGIN=https://localhost:3001&& set REACT_APP_AI_ENABLE=true&& set DANGEROUSLY_DISABLE_HOST_CHECK=true&& react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
@@ -47,5 +49,5 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:3000"
+  "proxy": "http://localhost:3002"
 }

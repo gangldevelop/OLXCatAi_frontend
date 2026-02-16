@@ -15,7 +15,7 @@ const useStyles = makeStyles({
   container: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '16px',
+    gap: '20px',
     padding: tokens.spacingHorizontalXL,
     height: '100%',
     minHeight: 0,
@@ -62,10 +62,11 @@ const useStyles = makeStyles({
   listWrap: {
     flex: 1,
     overflow: 'auto',
-    border: '1px solid rgba(0,0,0,0.04)',
+    border: '1px solid rgba(0,0,0,0.06)',
     borderRadius: '16px',
     backgroundColor: '#ffffff',
     boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    padding: tokens.spacingVerticalS,
   },
   table: { minWidth: '320px', tableLayout: 'fixed' },
   subjectCell: { width: '60%' },
@@ -74,22 +75,31 @@ const useStyles = makeStyles({
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
     display: 'block',
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#1e293b',
+    lineHeight: '1.5',
   },
   tableHeader: {
-    fontSize: '12px',
+    fontSize: '13px',
     fontWeight: '600' as any,
-    color: '#64748b',
+    color: '#475569',
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}`,
+    backgroundColor: '#f8fafc',
   },
   tableCell: {
-    fontSize: '13px',
+    fontSize: '14px',
     color: '#1e293b',
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}`,
+    lineHeight: '1.5',
   },
   tableRow: {
     transition: 'background-color 0.2s ease',
+    borderBottom: '1px solid rgba(0,0,0,0.04)',
     ':hover': {
       backgroundColor: '#f0f7ff',
+    },
+    ':last-child': {
+      borderBottom: 'none',
     },
   },
   pager: {
@@ -331,22 +341,22 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
       </div>
 
       <div className={styles.listWrap}>
-        <Table size="small" className={styles.table}>
+        <Table size="medium" className={styles.table}>
           <TableHeader>
-            <TableRow>
-              <TableHeaderCell className={styles.tableHeader}>
+            <TableRow style={{ borderBottom: '2px solid rgba(0,0,0,0.08)' }}>
+              <TableHeaderCell className={styles.tableHeader} style={{ width: '40px' }}>
                 <Checkbox checked={headerAllChecked ? true : headerIndeterminate ? 'mixed' : false} onChange={toggleSelectAllCurrentPage} />
               </TableHeaderCell>
               <TableHeaderCell className={styles.tableHeader}>Subject</TableHeaderCell>
               <TableHeaderCell className={`${styles.narrowHide} ${styles.tableHeader}`}>From</TableHeaderCell>
               <TableHeaderCell className={`${styles.narrowHide} ${styles.tableHeader}`}>Date</TableHeaderCell>
-              <TableHeaderCell className={styles.tableHeader}>St</TableHeaderCell>
+              <TableHeaderCell className={styles.tableHeader}>Status</TableHeaderCell>
             </TableRow>
           </TableHeader>
           <TableBody>
             {items.map(it => (
               <TableRow key={it.id} className={styles.tableRow} onClick={() => onSelect(it)} style={{ cursor: 'pointer' }}>
-                <TableCell>
+                <TableCell style={{ width: '40px', padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalM}` }}>
                   <Checkbox
                     checked={selectedIds.has(it.id)}
                     onClick={e => e.stopPropagation()}
@@ -355,27 +365,27 @@ const EmailList: React.FC<Props> = ({ onSelect, categoryFilter }) => {
                 </TableCell>
                 <TableCell className={`${styles.subjectCell} ${styles.tableCell}`}>
                   <Tooltip content={it.subject} relationship="label">
-                    <span className={styles.truncated}>{it.subject}</span>
+                    <span className={styles.truncated} style={{ fontWeight: '500' }}>{it.subject || '(No subject)'}</span>
                   </Tooltip>
                 </TableCell>
                 <TableCell className={`${styles.narrowHide} ${styles.tableCell}`}>
                   <Tooltip content={it.sender} relationship="label">
-                    <span className={styles.truncated}>{it.sender}</span>
+                    <span className={styles.truncated} style={{ color: '#475569' }}>{it.sender}</span>
                   </Tooltip>
                 </TableCell>
                 <TableCell className={`${styles.narrowHide} ${styles.tableCell}`}>
-                  <span>{it.receivedDate.toLocaleString()}</span>
+                  <span style={{ color: '#64748b', fontSize: '13px' }}>{it.receivedDate.toLocaleString()}</span>
                 </TableCell>
                 <TableCell className={styles.tableCell}>
-                  <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <Badge appearance="filled" color={it.isProcessed ? 'success' : 'subtle'} size="small" style={{ fontSize: '11px', borderRadius: '6px' }}>
+                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <Badge appearance="filled" color={it.isProcessed ? 'success' : 'subtle'} size="small" style={{ fontSize: '11px', borderRadius: '6px', padding: '2px 8px' }}>
                       {it.isProcessed ? 'Done' : 'New'}
                     </Badge>
                     {Array.isArray(it.categories) && it.categories.length > 0 && it.categories.slice(0, 3).map(label => (
-                      <Badge key={label} size="small" appearance="tint">{label}</Badge>
+                      <Badge key={label} size="small" appearance="tint" style={{ fontSize: '11px', padding: '2px 8px' }}>{label}</Badge>
                     ))}
                     {Array.isArray(it.categories) && it.categories.length > 3 && (
-                      <Badge size="small" appearance="tint">+{it.categories.length - 3}</Badge>
+                      <Badge size="small" appearance="tint" style={{ fontSize: '11px', padding: '2px 8px' }}>+{it.categories.length - 3}</Badge>
                     )}
                   </div>
                 </TableCell>
