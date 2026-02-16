@@ -4,7 +4,6 @@ import {
   Input,
   Label,
   Dialog,
-  DialogTrigger,
   DialogSurface,
   DialogTitle,
   DialogBody,
@@ -26,101 +25,185 @@ import {
   Badge,
   Switch,
   Text,
+  Spinner,
   makeStyles,
   tokens,
 } from '@fluentui/react-components';
-import { AddRegular, EditRegular, DeleteRegular } from '@fluentui/react-icons';
+import { AddRegular, EditRegular, DeleteRegular, ArrowLeftRegular } from '@fluentui/react-icons';
 import { Category } from '../types';
 import { AuthStore } from '../stores/auth';
-import { notifyError } from '../lib/notify';
+import { notifyError, notifySuccess } from '../lib/notify';
+import { adminService } from '../services/adminService'
+import { ORGANIZATION_ID } from '../config/env'
 
 const useStyles = makeStyles({
   container: {
-    padding: tokens.spacingHorizontalM,
+    padding: tokens.spacingHorizontalXL,
     height: '100%',
     minHeight: 0,
     overflow: 'auto',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
   },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: tokens.spacingVerticalM,
+    marginBottom: '20px',
     flexWrap: 'wrap',
     gap: tokens.spacingVerticalS,
+  },
+  headerLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    minWidth: 0,
+    flex: 1,
+  },
+  backButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+    flexShrink: 0,
+  },
+  headerTitle: {
+    fontSize: '22px',
+    fontWeight: '700' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+    lineHeight: '1.2',
+    margin: 0,
+  },
+  addButton: {
+    borderRadius: '10px',
+    minWidth: '32px',
+    padding: '6px',
+    background: 'linear-gradient(135deg, #0f6cbd 0%, #2563eb 100%) !important',
+    border: 'none !important',
+    boxShadow: '0 2px 8px rgba(15, 108, 189, 0.3)',
+    transition: 'all 0.2s ease',
+    ':hover:not(:disabled)': {
+      boxShadow: '0 4px 16px rgba(15, 108, 189, 0.4)',
+      transform: 'translateY(-1px)',
+    },
+    ':active': { transform: 'translateY(0)' },
+  },
+  dialogSurface: {
+    borderRadius: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    border: '1px solid rgba(0,0,0,0.04)',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalS,
+    gap: '16px',
+  },
+  formLabel: {
+    fontSize: '13px',
+    fontWeight: '600' as any,
+    color: '#0f172a',
+  },
+  formInput: {
+    borderRadius: '10px',
+    '& input': { fontSize: '13px' },
   },
   colorPicker: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+    gap: '12px',
   },
   colorInput: {
     width: '50px',
-    height: '35px',
-    border: 'none',
-    borderRadius: tokens.borderRadiusMedium,
+    height: '36px',
+    border: '1px solid #f1f5f9',
+    borderRadius: '10px',
     cursor: 'pointer',
+    padding: '2px',
   },
   keywordsContainer: {
     display: 'flex',
     flexDirection: 'column',
-    gap: tokens.spacingVerticalS,
+    gap: '10px',
   },
   keywordInput: {
     display: 'flex',
-    gap: tokens.spacingHorizontalS,
+    gap: '10px',
     alignItems: 'center',
   },
   keywordTag: {
     display: 'inline-flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
-    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`,
-    backgroundColor: tokens.colorNeutralBackground3,
-    borderRadius: tokens.borderRadiusMedium,
-    fontSize: tokens.fontSizeBase100,
+    gap: '6px',
+    padding: '6px 12px',
+    backgroundColor: '#f0f7ff',
+    borderRadius: '10px',
+    fontSize: '12px',
+    color: '#1e293b',
+  },
+  primaryButton: {
+    borderRadius: '12px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+    background: 'linear-gradient(135deg, #0f6cbd 0%, #2563eb 100%) !important',
+    border: 'none !important',
+    boxShadow: '0 2px 8px rgba(15, 108, 189, 0.3)',
+    ':hover:not(:disabled)': {
+      boxShadow: '0 4px 16px rgba(15, 108, 189, 0.4)',
+      transform: 'translateY(-1px)',
+    },
+    ':active': { transform: 'translateY(0)' },
+  },
+  secondaryButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
   },
   tableActions: {
     display: 'flex',
-    gap: tokens.spacingHorizontalXS,
+    gap: '4px',
   },
   tableContainer: {
     overflowX: 'auto',
     overflowY: 'auto',
     maxHeight: '100%',
-  },
-  headerBar: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: tokens.spacingHorizontalS,
-    marginBottom: tokens.spacingVerticalS,
-    flexWrap: 'wrap',
+    maxWidth: '100%',
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
   },
   controlsBar: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: tokens.spacingHorizontalS,
-    marginBottom: tokens.spacingVerticalS,
+    gap: '12px',
+    marginBottom: '16px',
     flexWrap: 'wrap',
+  },
+  searchInput: {
+    flex: 1,
+    minWidth: '140px',
+    borderRadius: '10px',
+    '& input': { fontSize: '13px' },
   },
   pager: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalS,
+    gap: '8px',
+  },
+  pagerText: {
+    fontSize: '13px',
+    color: '#64748b',
+  },
+  actionsButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
   },
   responsiveTable: {
-    minWidth: '320px',
-    width: 'max-content',
+    minWidth: '280px',
+    width: '100%',
     tableLayout: 'fixed',
-    '@media (max-width: 320px)': { minWidth: '320px' },
-    
   },
   narrowHide: { '@media (max-width: 280px)': { display: 'none' } },
   truncatedCell: {
@@ -128,6 +211,8 @@ const useStyles = makeStyles({
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
+    fontSize: '13px',
+    color: '#1e293b',
   },
   keywordText: {
     maxWidth: '120px',
@@ -139,22 +224,34 @@ const useStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    minWidth: '140px',
-    width: '180px',
+    minWidth: '80px',
     overflow: 'hidden',
   },
   keywordsCell: {
-    minWidth: '110px',
-    width: '120px',
+    minWidth: '70px',
+    maxWidth: '90px',
     overflow: 'hidden',
   },
   statusCell: {
-    minWidth: '60px',
-    width: '70px',
+    minWidth: '52px',
+    width: '52px',
     textAlign: 'left',
   },
-  actionsCell: { minWidth: '74px', width: '84px', textAlign: 'center' },
-  btnNoShrink: { whiteSpace: 'nowrap', flexShrink: 0 },
+  actionsCell: { minWidth: '68px', width: '68px', textAlign: 'center' },
+  tableHeader: {
+    fontSize: '12px',
+    fontWeight: '600' as any,
+    color: '#64748b',
+  },
+  tableRow: {
+    transition: 'background-color 0.2s ease',
+    ':hover': { backgroundColor: '#f0f7ff' },
+  },
+  confirmDialogSurface: {
+    borderRadius: '20px',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    border: '1px solid rgba(0,0,0,0.04)',
+  },
 });
 
 interface CategoryManagerProps {
@@ -162,9 +259,10 @@ interface CategoryManagerProps {
   onCategoryChange: (categories: Category[]) => void;
   onAddCategory?: (category: { name: string; color: string; keywords?: string[]; linkFolder?: boolean }) => void;
   onUpdateCategory?: (id: string, updates: Partial<Category>) => void;
-  onDeleteCategory?: (id: string) => void;
+  onDeleteCategory?: (id: string) => void | Promise<void>;
   onToggleCategoryActive?: (id: string) => void;
   onImportFromOutlook?: () => Promise<any> | void;
+  onBack?: () => void;
 }
 
 const CategoryManager: React.FC<CategoryManagerProps> = ({
@@ -175,6 +273,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
   onDeleteCategory,
   onToggleCategoryActive,
   onImportFromOutlook,
+  onBack,
 }) => {
   const styles = useStyles();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -191,35 +290,51 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
     isActive: true,
   });
   const [newKeyword, setNewKeyword] = useState('');
+  const [isAdmin, setIsAdmin] = useState<boolean>(false)
+  const [lockPreset, setLockPreset] = useState<boolean>(false)
+  const [probingAdmin, setProbingAdmin] = useState<boolean>(false)
+  const [categoryToDelete, setCategoryToDelete] = useState<Category | null>(null)
+  const [deleteInProgress, setDeleteInProgress] = useState(false)
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!formData.name || !formData.color) return
     if (formData.linkFolder && !AuthStore.getState().graphToken) {
       notifyError('Outlook authentication required', 'Please re-authenticate Outlook to link a folder.')
       return
     }
-    if (onAddCategory) {
-      onAddCategory({
-        name: formData.name,
-        color: formData.color,
-        outlookFolderId: null,
-        keywords: formData.keywords,
-        isActive: formData.isActive,
-        linkFolder: formData.linkFolder,
-      } as any);
-    } else {
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        name: formData.name,
-        color: formData.color,
-        outlookFolderId: null,
-        keywords: formData.keywords,
-        isActive: formData.isActive,
-      };
-      onCategoryChange([...categories, newCategory]);
+    const name = formData.name
+    try {
+      if (onAddCategory) {
+        await onAddCategory({
+          name: formData.name,
+          color: formData.color,
+          outlookFolderId: null,
+          keywords: formData.keywords,
+          isActive: formData.isActive,
+          linkFolder: formData.linkFolder,
+        } as any);
+      } else {
+        const newCategory: Category = {
+          id: Date.now().toString(),
+          name: formData.name,
+          color: formData.color,
+          outlookFolderId: null,
+          keywords: formData.keywords,
+          isActive: formData.isActive,
+        };
+        onCategoryChange([...categories, newCategory]);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+      notifySuccess('Category added', `${name} has been created.`);
+    } catch (e: any) {
+      const status = e?.response?.status
+      if (status === 409 || /exists/i.test(e?.message || '')) {
+        notifyError('This category name already exists.')
+      } else {
+        notifyError('Failed to create category')
+      }
     }
-    resetForm();
-    setIsDialogOpen(false);
   };
 
   const handleEditCategory = (category: Category) => {
@@ -234,29 +349,56 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
     setIsDialogOpen(true);
   };
 
-  const handleUpdateCategory = () => {
+  const handleUpdateCategory = async () => {
     if (!editingCategory) return;
-    
-    if (onUpdateCategory) {
-      onUpdateCategory(editingCategory.id, { name: formData.name, color: formData.color, keywords: formData.keywords });
-    } else {
-      const updatedCategories = categories.map(cat =>
-        cat.id === editingCategory.id
-          ? { ...cat, ...formData }
-          : cat
-      );
-      onCategoryChange(updatedCategories);
+    const name = formData.name
+    try {
+      if (onUpdateCategory) {
+        await onUpdateCategory(editingCategory.id, { name: formData.name, color: formData.color, keywords: formData.keywords });
+      } else {
+        const updatedCategories = categories.map(cat =>
+          cat.id === editingCategory.id
+            ? { ...cat, ...formData }
+            : cat
+        );
+        onCategoryChange(updatedCategories);
+      }
+      resetForm();
+      setIsDialogOpen(false);
+      notifySuccess('Category updated', `${name} has been saved.`);
+    } catch (e: any) {
+      const status = e?.response?.status
+      if (status === 409 && /locked preset/i.test(e?.message || '')) {
+        notifyError('This category is locked by an admin preset.')
+      } else if (status === 409) {
+        notifyError('A category with this name already exists.')
+      } else {
+        notifyError('Failed to update category')
+      }
     }
-    resetForm();
-    setIsDialogOpen(false);
   };
 
-  const handleDeleteCategory = (categoryId: string) => {
-    if (onDeleteCategory) {
-      onDeleteCategory(categoryId);
-    } else {
-      const updatedCategories = categories.filter(cat => cat.id !== categoryId);
-      onCategoryChange(updatedCategories);
+  const handleDeleteClick = (category: Category) => {
+    setCategoryToDelete(category);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!categoryToDelete) return;
+    const name = categoryToDelete.name;
+    setDeleteInProgress(true);
+    try {
+      if (onDeleteCategory) {
+        await onDeleteCategory(categoryToDelete.id);
+      } else {
+        const updatedCategories = categories.filter(cat => cat.id !== categoryToDelete.id);
+        onCategoryChange(updatedCategories);
+      }
+      setCategoryToDelete(null);
+      notifySuccess('Category deleted', `${name} has been removed.`);
+    } catch (e: any) {
+      notifyError('Failed to delete category', e?.message);
+    } finally {
+      setDeleteInProgress(false);
     }
   };
 
@@ -295,6 +437,49 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
   };
 
   useEffect(() => {
+    let mounted = true
+    const probe = async () => {
+      setProbingAdmin(true)
+      try {
+        const ok = await adminService.probeAccess()
+        if (mounted) setIsAdmin(!!ok)
+      } catch {
+        if (mounted) setIsAdmin(false)
+      } finally {
+        if (mounted) setProbingAdmin(false)
+      }
+    }
+    probe()
+    return () => { mounted = false }
+  }, [])
+
+  const handleCreatePreset = async () => {
+    try {
+      const body = {
+        organizationId: ORGANIZATION_ID,
+        name: formData.name,
+        color: formData.color,
+        keywords: (Array.isArray(formData.keywords) ? formData.keywords.join(',') : undefined) as string | undefined,
+        isDefault: true,
+        locked: !!lockPreset,
+      }
+      await adminService.createPreset(body as any)
+      notifySuccess('Preset created.')
+    } catch (e: any) {
+      const status = e?.response?.status
+      if (status === 403) {
+        setIsAdmin(false)
+        return
+      }
+      if (status === 409 || status === 500) {
+        notifyError('Preset already exists.')
+        return
+      }
+      notifyError('Failed to create preset')
+    }
+  }
+
+  useEffect(() => {
     const t = setTimeout(() => setDebounced(filter), 300)
     return () => clearTimeout(t)
   }, [filter])
@@ -313,24 +498,35 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
   return (
     <div className={styles.container}>
       <div className={styles.header}>
-        <h2>Email Categories</h2>
-        <Dialog open={isDialogOpen} onOpenChange={(_, data) => setIsDialogOpen(data.open)}>
-          <DialogTrigger disableButtonEnhancement>
-            <Button appearance="primary" size="small" icon={<AddRegular />} onClick={handleDialogOpen}>
-              Add Category
+        <div className={styles.headerLeft}>
+          {onBack && (
+            <Button
+              appearance="secondary"
+              size="small"
+              className={styles.backButton}
+              icon={<ArrowLeftRegular />}
+              onClick={onBack}
+            >
+              Back
             </Button>
-          </DialogTrigger>
-          <DialogSurface>
+          )}
+          <h2 className={styles.headerTitle}>Email Categories</h2>
+        </div>
+      </div>
+
+      <Dialog open={isDialogOpen} onOpenChange={(_, data) => setIsDialogOpen(data.open)}>
+          <DialogSurface className={styles.dialogSurface}>
             <DialogBody>
-              <DialogTitle>
+              <DialogTitle style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>
                 {editingCategory ? 'Edit Category' : 'Add New Category'}
               </DialogTitle>
               <DialogContent>
                 <div className={styles.form}>
                   <div>
-                    <Label htmlFor="categoryName">Category Name</Label>
+                    <Label htmlFor="categoryName" className={styles.formLabel}>Category Name</Label>
                     <Input
                       id="categoryName"
+                      className={styles.formInput}
                       value={formData.name}
                       onChange={(_, data) => setFormData({ ...formData, name: data.value })}
                       placeholder="e.g., Urgent Projects"
@@ -350,8 +546,23 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
                     )}
                   </div>
 
+                  {isAdmin && (
+                    <div style={{ marginTop: tokens.spacingVerticalM, paddingTop: tokens.spacingVerticalS, borderTop: '1px solid #f1f5f9' }}>
+                      <Label className={styles.formLabel}>Admin actions</Label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, marginTop: 6 }}>
+                        <Button size="small" appearance="secondary" className={styles.secondaryButton} onClick={handleCreatePreset} disabled={!formData.name || probingAdmin}>
+                          Create company preset from this category
+                        </Button>
+                        <Switch label="Locked" checked={lockPreset} onChange={(_, d) => setLockPreset(d.checked)} />
+                      </div>
+                      <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+                        Company preset: matches by name; locked blocks name/color/keywords edits.
+                      </Text>
+                    </div>
+                  )}
+
                   <div>
-                    <Label>Category Color</Label>
+                    <Label className={styles.formLabel}>Category Color</Label>
                     <div className={styles.colorPicker}>
                       <input
                         type="color"
@@ -364,15 +575,16 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
                   </div>
 
                   <div className={styles.keywordsContainer}>
-                    <Label>Keywords (Optional)</Label>
+                    <Label className={styles.formLabel}>Keywords (Optional)</Label>
                     <div className={styles.keywordInput}>
                       <Input
+                        className={styles.formInput}
                         value={newKeyword}
                         onChange={(_, data) => setNewKeyword(data.value)}
                         placeholder="Add keyword"
                         onKeyDown={(e) => { if (e.key === 'Enter') handleAddKeyword() }}
                       />
-                      <Button size="small" onClick={handleAddKeyword}>Add</Button>
+                      <Button size="small" className={styles.secondaryButton} onClick={handleAddKeyword}>Add</Button>
                     </div>
                     <div>
                       {formData.keywords.map((keyword: string, index: number) => (
@@ -400,12 +612,13 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
                 </div>
               </DialogContent>
               <DialogActions>
-                <Button appearance="secondary" size="small" onClick={() => setIsDialogOpen(false)}>
+                <Button appearance="secondary" size="small" className={styles.secondaryButton} onClick={() => setIsDialogOpen(false)}>
                   Cancel
                 </Button>
                 <Button
                   appearance="primary"
                   size="small"
+                  className={styles.primaryButton}
                   onClick={editingCategory ? handleUpdateCategory : handleAddCategory}
                   disabled={!formData.name || !formData.color || (formData.linkFolder && !AuthStore.getState().graphToken)}
                 >
@@ -414,16 +627,15 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
               </DialogActions>
             </DialogBody>
           </DialogSurface>
-        </Dialog>
-      </div>
+      </Dialog>
 
       <div className={styles.controlsBar}>
-        <Input value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="Search categories" style={{ flex: 1, minWidth: 140 }} />
+        <Input value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="Search categories" className={styles.searchInput} />
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Text size={100}>Pg {Math.floor(skip / top) + 1}</Text>
+          <Button appearance="primary" size="small" icon={<AddRegular />} aria-label="Add category" className={styles.addButton} onClick={handleDialogOpen} />
           <Menu>
             <MenuTrigger>
-              <MenuButton size="small" appearance="secondary">Actions</MenuButton>
+              <MenuButton size="small" appearance="secondary" className={styles.actionsButton}>Actions</MenuButton>
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
@@ -449,18 +661,18 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
         <Table className={styles.responsiveTable}>
         <TableHeader>
           <TableRow>
-            <TableHeaderCell className={styles.categoryCell}>Category</TableHeaderCell>
-            <TableHeaderCell className={`${styles.keywordsCell} ${styles.narrowHide}`}>Keywords</TableHeaderCell>
-            <TableHeaderCell className={styles.statusCell}>Status</TableHeaderCell>
-            <TableHeaderCell className={styles.actionsCell}>Actions</TableHeaderCell>
+            <TableHeaderCell className={`${styles.categoryCell} ${styles.tableHeader}`}>Category</TableHeaderCell>
+            <TableHeaderCell className={`${styles.keywordsCell} ${styles.narrowHide} ${styles.tableHeader}`}>Keywords</TableHeaderCell>
+            <TableHeaderCell className={`${styles.statusCell} ${styles.tableHeader}`}>Status</TableHeaderCell>
+            <TableHeaderCell className={`${styles.actionsCell} ${styles.tableHeader}`}>Actions</TableHeaderCell>
           </TableRow>
         </TableHeader>
         <TableBody>
           {filtered.page.map((category) => (
-            <TableRow key={category.id}>
+            <TableRow key={category.id} className={styles.tableRow}>
               <TableCell className={styles.categoryCell}>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', minWidth: 0, overflow: 'hidden' }}>
-                  <div style={{ width: 12, height: 12, backgroundColor: category.color, borderRadius: '50%' }} />
+                  <div style={{ width: 12, height: 12, minWidth: 12, minHeight: 12, flexShrink: 0, backgroundColor: category.color, borderRadius: '50%' }} />
                   <span className={styles.truncatedCell} title={category.name}>
                     {category.name}
                   </span>
@@ -510,7 +722,7 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
                     size="small"
                     icon={<DeleteRegular />}
                     aria-label="Delete category"
-                    onClick={() => handleDeleteCategory(category.id)}
+                    onClick={() => handleDeleteClick(category)}
                   />
                 </div>
               </TableCell>
@@ -519,6 +731,48 @@ const CategoryManager: React.FC<CategoryManagerProps> = ({
         </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!categoryToDelete} onOpenChange={(_, d) => !d.open && setCategoryToDelete(null)}>
+        <DialogSurface className={styles.confirmDialogSurface}>
+          <DialogBody>
+            <DialogTitle style={{ fontSize: '18px', fontWeight: 600, color: '#0f172a' }}>
+              Delete Category
+            </DialogTitle>
+            <DialogContent>
+              <Text style={{ fontSize: '14px', color: '#64748b', lineHeight: 1.5 }}>
+                Are you sure you want to delete <strong style={{ color: '#1e293b' }}>{categoryToDelete?.name}</strong>? This action cannot be undone.
+              </Text>
+            </DialogContent>
+            <DialogActions>
+              <Button
+                appearance="secondary"
+                size="small"
+                className={styles.secondaryButton}
+                onClick={() => setCategoryToDelete(null)}
+                disabled={deleteInProgress}
+              >
+                Cancel
+              </Button>
+              <Button
+                appearance="primary"
+                size="small"
+                className={styles.primaryButton}
+                onClick={handleConfirmDelete}
+                disabled={deleteInProgress}
+              >
+                {deleteInProgress ? (
+                  <>
+                    <Spinner size="tiny" />
+                    <span style={{ marginLeft: 8 }}>Deleting…</span>
+                  </>
+                ) : (
+                  'Delete'
+                )}
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
     </div>
   );
 };

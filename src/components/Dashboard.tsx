@@ -11,36 +11,38 @@ import {
   Spinner,
 } from '@fluentui/react-components';
 import { MailRegular, FolderRegular, CheckmarkRegular, PlayRegular } from '@fluentui/react-icons';
+import RecentlyCategorized from './RecentlyCategorized'
 import { Category, Email, CategoryStats } from '../types';
 import { useSubscriptions } from '../hooks/useSubscriptions';
 import { AuthStore } from '../stores/auth';
 
 const useStyles = makeStyles({
   container: {
-    padding: tokens.spacingHorizontalM,
+    padding: tokens.spacingHorizontalXL,
     height: '100%',
     minHeight: 0,
-    overflow: 'auto',
   },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: tokens.spacingVerticalS, flexWrap: 'wrap', gap: tokens.spacingVerticalS },
   statsGrid: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
-    gap: tokens.spacingHorizontalXS,
+    gap: '12px',
     marginBottom: tokens.spacingVerticalM,
     '@media (max-width: 480px)': {
       gridTemplateColumns: 'repeat(2, 1fr)',
-      gap: tokens.spacingHorizontalXS,
+      gap: '10px',
     },
     '@media (max-width: 360px)': {
-      gridTemplateColumns: 'repeat(2, 1fr)'
-    }
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '8px',
+    },
   },
   monitoringStrip: {
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground1,
-    padding: tokens.spacingHorizontalM,
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    padding: '20px 24px',
     marginBottom: tokens.spacingVerticalM,
     display: 'flex',
     alignItems: 'center',
@@ -48,60 +50,157 @@ const useStyles = makeStyles({
     gap: tokens.spacingHorizontalS,
     flexWrap: 'wrap',
   },
+  monitoringIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: '#f0f7ff',
+    color: '#0f6cbd',
+    flexShrink: 0,
+  },
+  categorySection: {
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+    marginBottom: tokens.spacingVerticalM,
+    overflow: 'hidden',
+  },
+  categoryHeader: {
+    padding: '16px 24px',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #f1f5f9',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
+  },
+  categoryHeaderText: {
+    fontSize: '15px',
+    fontWeight: '600' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+  },
+  categoryList: {
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: '180px',
+    overflowY: 'auto',
+  },
+  categoryItem: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: tokens.spacingHorizontalS,
+    padding: '14px 24px',
+    borderBottom: '1px solid #f1f5f9',
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease',
+    '&:last-child': { borderBottom: 'none' },
+    '&:hover': { backgroundColor: '#f0f7ff' },
+  },
+  categoryMeta: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '12px',
+    minWidth: 0,
+  },
+  categoryDot: { width: '8px', height: '8px', borderRadius: '50%' },
+  categoryName: {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    fontSize: '13px',
+    color: '#1e293b',
+    fontWeight: '500' as any,
+  },
   statCard: {
-    padding: tokens.spacingHorizontalS,
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground1,
+    padding: '20px 16px',
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
     textAlign: 'center',
-    '@media (max-width: 480px)': {
-      padding: tokens.spacingHorizontalS,
+    transition: 'all 0.2s ease',
+    ':hover': {
+      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     },
-    '@media (max-width: 360px)': { padding: tokens.spacingHorizontalXS },
+    '@media (max-width: 480px)': {
+      padding: '16px 12px',
+    },
+    '@media (max-width: 360px)': { padding: '14px 10px' },
+  },
+  statIcon: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    backgroundColor: '#f0f7ff',
+    color: '#0f6cbd',
+    margin: '0 auto',
+    marginBottom: tokens.spacingVerticalXS,
   },
   statHeader: {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: tokens.spacingHorizontalXS,
+    gap: '8px',
     marginBottom: tokens.spacingVerticalXS,
   },
   statValue: {
-    fontSize: tokens.fontSizeBase500,
-    fontWeight: tokens.fontWeightSemibold,
+    fontSize: '22px',
+    fontWeight: '700' as any,
+    color: '#0f172a',
+    letterSpacing: '-0.02em',
+    lineHeight: '1.2',
   },
   statDescription: {
-    fontSize: tokens.fontSizeBase100,
-    color: tokens.colorNeutralForeground3,
+    fontSize: '12px',
+    color: '#94a3b8',
+    lineHeight: '1.4',
   },
-  quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: tokens.spacingHorizontalS, marginBottom: tokens.spacingVerticalM },
+  quickActions: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginBottom: tokens.spacingVerticalM },
   actionCard: {
     padding: tokens.spacingHorizontalM,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    borderRadius: tokens.borderRadiusMedium,
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
     '&:hover': {
-      backgroundColor: tokens.colorNeutralBackground2,
+      backgroundColor: '#f0f7ff',
+      boxShadow: '0 2px 8px rgba(15, 108, 189, 0.12)',
     },
   },
   actionHeader: {
     display: 'flex',
     alignItems: 'center',
-    gap: tokens.spacingHorizontalXS,
+    gap: '8px',
     marginBottom: tokens.spacingVerticalXS,
   },
-  recentActivity: { border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden' },
+  recentActivity: {
+    border: '1px solid rgba(0,0,0,0.04)',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+    boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06)',
+  },
   activityHeader: {
-    padding: tokens.spacingHorizontalM,
-    backgroundColor: tokens.colorNeutralBackground2,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke1}`,
+    padding: '16px 24px',
+    backgroundColor: '#ffffff',
+    borderBottom: '1px solid #f1f5f9',
     position: 'sticky',
     top: 0,
   },
   activityItem: {
-    padding: tokens.spacingHorizontalM,
-    borderBottom: `1px solid ${tokens.colorNeutralStroke2}`,
+    padding: '14px 24px',
+    borderBottom: '1px solid #f1f5f9',
     '&:last-child': {
       borderBottom: 'none',
     },
@@ -123,12 +222,33 @@ const useStyles = makeStyles({
     height: '8px',
     borderRadius: '50%',
   },
+  manageButton: {
+    borderRadius: '10px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+  },
+  startMonitoringButton: {
+    borderRadius: '12px',
+    fontSize: '13px',
+    fontWeight: '600' as any,
+    background: 'linear-gradient(135deg, #0f6cbd 0%, #2563eb 100%) !important',
+    border: 'none !important',
+    boxShadow: '0 2px 8px rgba(15, 108, 189, 0.3)',
+    transition: 'all 0.2s ease',
+    ':hover': {
+      boxShadow: '0 4px 16px rgba(15, 108, 189, 0.4)',
+      transform: 'translateY(-1px)',
+    },
+    ':active': {
+      transform: 'translateY(0)',
+    },
+  },
 });
 
 interface DashboardProps {
   emails: Email[];
   categories: Category[];
-  onNavigate: (section: string) => void;
+  onNavigate: (section: string, options?: { filterCategoryId?: string; filterFolderId?: string }) => void;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
@@ -172,133 +292,94 @@ const Dashboard: React.FC<DashboardProps> = ({
   return (
     <div className={styles.container}>
       <div className={styles.monitoringStrip}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <MailRegular />
-          <Text weight="semibold">Email Monitoring</Text>
-          <Badge appearance={subscriptions.some(s => s.isActive) ? 'filled' : 'tint'} color={subscriptions.some(s => s.isActive) ? 'success' : 'subtle'} size="small" style={{ fontSize: tokens.fontSizeBase100 }}>
-            {subscriptions.some(s => s.isActive) ? 'Active' : 'Inactive'}
-          </Badge>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <div className={styles.monitoringIcon}>
+            <MailRegular />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Text className={styles.categoryHeaderText}>Email Monitoring</Text>
+            <Badge appearance={subscriptions.some(s => s.isActive) ? 'filled' : 'tint'} color={subscriptions.some(s => s.isActive) ? 'success' : 'subtle'} size="small" style={{ fontSize: '11px' }}>
+              {subscriptions.some(s => s.isActive) ? 'Active' : 'Inactive'}
+            </Badge>
+          </div>
         </div>
         {graphToken && !subscriptions.some(s => s.isActive) && (
-          <Button appearance="primary" size="small" onClick={() => startEmailMonitoring()} disabled={loading}>
+          <Button appearance="primary" size="small" className={styles.startMonitoringButton} onClick={() => startEmailMonitoring()} disabled={loading}>
             Start Monitoring
           </Button>
         )}
         {!graphToken && (
-          <Text size={200} color="neutral">Sign in to Outlook to enable monitoring</Text>
+          <Text size={200} style={{ color: '#64748b', fontSize: '13px' }}>Sign in to Outlook to enable monitoring</Text>
         )}
-      </div>
-      <div className={styles.header}>
-        <h2>Home</h2>
       </div>
 
       <div className={styles.statsGrid}>
         <div className={styles.statCard}>
-          <div className={styles.statHeader}>
+          <div className={styles.statIcon}>
             <MailRegular />
-            <Text weight="semibold">Total Emails</Text>
           </div>
+          <Text className={styles.categoryHeaderText} style={{ marginBottom: 4 }}>Total Emails</Text>
           <div className={styles.statValue}>{totalEmails}</div>
           <div className={styles.statDescription}>Emails in your inbox</div>
         </div>
 
         <div className={styles.statCard}>
-          <div className={styles.statHeader}>
-            <CheckmarkRegular />
-            <Text weight="semibold">Processed</Text>
-          </div>
-          <div className={styles.statValue}>{processedEmails}</div>
-          <div className={styles.statDescription}>
-            {processingProgress.toFixed(1)}% complete
-          </div>
-        </div>
-
-        <div className={styles.statCard}>
-          <div className={styles.statHeader}>
+          <div className={styles.statIcon}>
             <FolderRegular />
-            <Text weight="semibold">Categorized</Text>
           </div>
+          <Text className={styles.categoryHeaderText} style={{ marginBottom: 4 }}>Categorized</Text>
           <div className={styles.statValue}>{categorizedEmails}</div>
           <div className={styles.statDescription}>
             Emails organized into folders
           </div>
         </div>
 
-        <div className={styles.statCard}>
+        {/* <div className={styles.statCard}>
           <div className={styles.statHeader}>
             <FolderRegular />
             <Text weight="semibold">Active Categories</Text>
           </div>
           <div className={styles.statValue}>{activeCategories}</div>
           <div className={styles.statDescription}>Categories available</div>
-        </div>
+        </div> */}
       </div>
 
-      <div className={styles.quickActions}>
-        <Card className={styles.actionCard} onClick={() => onNavigate('categories')}>
-          <CardHeader
-            image={<FolderRegular />}
-            header={<Text weight="semibold">Manage Categories</Text>}
-          />
-          <CardPreview>
-            <Text size={200} color="neutral">
-              Create and organize email categories
-            </Text>
-          </CardPreview>
-        </Card>
-
-        <Card className={styles.actionCard} onClick={() => onNavigate('processing')}>
-          <CardHeader
-            image={<PlayRegular />}
-            header={<Text weight="semibold">Process Emails</Text>}
-          />
-          <CardPreview>
-            <Text size={200} color="neutral">
-              {unprocessedEmails > 0
-                ? `${unprocessedEmails} emails ready to process`
-                : 'All emails processed'}
-            </Text>
-          </CardPreview>
-        </Card>
-      </div>
-
-      <div className={styles.recentActivity}>
-        <div className={styles.activityHeader}>
-          <Text weight="semibold">Recent Activity</Text>
+      <div className={styles.categorySection}>
+        <div className={styles.categoryHeader}>
+          <Text className={styles.categoryHeaderText}>Categories</Text>
+          <Button size="small" appearance="secondary" className={styles.manageButton} onClick={() => onNavigate('categories')}>Manage</Button>
         </div>
-        {recentEmails.length > 0 ? (
-          recentEmails.map((email) => (
-            <div key={email.id} className={styles.activityItem}>
-              <div className={styles.activityContent}>
-                <div>
-                  <Text weight="semibold" truncate style={{ maxWidth: '300px' }}>
-                    {email.subject}
-                  </Text>
-                  <Text size={200} color="neutral">{email.sender} • {email.receivedDate.toLocaleDateString()}</Text>
+        <div className={styles.categoryList}>
+          {categories.map(cat => {
+            const count = emails.filter(e => e.categoryId === cat.id || e.parentFolderId === cat.outlookFolderId).length;
+            return (
+              <div
+                key={cat.id}
+                className={styles.categoryItem}
+                onClick={() => onNavigate('emails', { filterCategoryId: cat.id, filterFolderId: (cat as any).outlookFolderId || undefined })}
+              >
+                <div className={styles.categoryMeta}>
+                  <div className={styles.categoryDot} style={{ backgroundColor: cat.color || tokens.colorNeutralForeground3 }} />
+                  <span className={styles.categoryName} title={cat.name}>{cat.name}</span>
                 </div>
-                <div className={styles.categoryBadge}>
-                  <div
-                    className={styles.categoryColor}
-                    style={{ backgroundColor: getCategoryColor(email.categoryId, (email as any).parentFolderId) }}
-                  />
-                  <Badge
-                    appearance={email.isProcessed ? 'filled' : 'outline'}
-                    color={email.isProcessed ? 'success' : 'subtle'}
-                    size="small"
-                    style={{ fontSize: tokens.fontSizeBase100 }}
-                  >
-                    {email.isProcessed ? getCategoryName(email.categoryId, (email as any).parentFolderId) : 'Pending'}
-                  </Badge>
-                </div>
+                <Badge appearance="filled" size="small">{count}</Badge>
               </div>
-            </div>
-          ))
-        ) : (
-          <div className={styles.activityItem}>
-            <Text color="neutral">No recent emails to display</Text>
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
+
+      {/* Quick actions removed as processing is handled in Emails tab */}
+
+      <RecentlyCategorized
+        emails={emails}
+        categories={categories}
+        onEmailUpdated={(id, updates) => {
+          const existing = emails.find(e => e.id === id)
+          if (!existing) return
+          existing && (existing.categoryId !== updates.categoryId || existing.isProcessed !== updates.isProcessed) && (void 0)
+        }}
+      />
     </div>
   );
 };

@@ -75,35 +75,63 @@ export const useCategories = () => {
   const importFromOutlook = useCallback(async () => {
     try {
       if (!AuthStore.getState().graphToken) {
-        notifyError('Outlook authentication required', 'Please re-authenticate Outlook to import folders.')
+        notifyError('Outlook authentication required', 'Please re-authenticate Outlook to sync folders.')
         throw new Error('Graph token missing')
       }
       const res = await categoryService.syncFromOutlook()
       await load()
-      const processed = (res?.data as any)?.processed ?? 0
-      notifySuccess('Import completed', `${processed} folders processed`)
+      const data = res?.data as any
+      const totalFolders = data?.totalFolders ?? 0
+      const totalCategories = data?.totalCategories ?? 0
+      const processed = data?.processed ?? 0
+      const items = Array.isArray(data?.items) ? data.items : []
+      const created = items.filter((item: any) => item.created === true).length
+      const updated = items.filter((item: any) => item.updated === true).length
+      
+      let message = `Synced ${processed} folder${processed !== 1 ? 's' : ''}`
+      if (created > 0 || updated > 0) {
+        const parts: string[] = []
+        if (created > 0) parts.push(`${created} created`)
+        if (updated > 0) parts.push(`${updated} linked`)
+        message += ` (${parts.join(', ')})`
+      }
+      message += `. Total categories: ${totalCategories}`
+      
+      notifySuccess('Sync from Outlook completed', message)
       return res
     } catch (e: any) {
       if (e?.response?.status === 401) {
-        notifyError('Outlook authentication required', 'Please re-authenticate Outlook to import folders.')
+        notifyError('Outlook authentication required', 'Please re-authenticate Outlook to sync folders.')
       } else {
-        notifyError('Failed to import from Outlook')
+        notifyError('Failed to sync from Outlook', e?.message || 'An error occurred while syncing folders.')
       }
       throw e
     }
   }, [load])
 
   const updateCategory = useCallback(async (id: string, updates: Partial<Category>) => {
-    const updated = await categoryService.update(id, {
-      name: updates.name,
-      color: updates.color ? normalizeColor(updates.color) : undefined,
-      keywords: Array.isArray(updates.keywords) ? updates.keywords : [],
-    })
-    const merged = {
-      ...updated,
-      keywords: (updated as any).keywords ?? updates.keywords ?? [],
-    } as BackendCategory
-    setCategories(prev => prev.map(cat => cat.id === id ? mapToUi(merged) : cat))
+    try {
+      const updated = await categoryService.update(id, {
+        name: updates.name,
+        color: updates.color ? normalizeColor(updates.color) : undefined,
+        keywords: Array.isArray(updates.keywords) ? updates.keywords : [],
+      })
+      const merged = {
+        ...updated,
+        keywords: (updated as any).keywords ?? updates.keywords ?? [],
+      } as BackendCategory
+      setCategories(prev => prev.map(cat => cat.id === id ? mapToUi(merged) : cat))
+    } catch (e: any) {
+      const isLocked = e?.response?.status === 409 && /locked preset/i.test(e?.message || '')
+      if (isLocked) {
+        notifyError('This category is locked by an admin preset.')
+      } else if (e?.response?.status === 409 && /exists/i.test(e?.message || '')) {
+        notifyError('A category with this name already exists.')
+      } else {
+        notifyError('Failed to update category')
+      }
+      throw e
+    }
   }, [])
 
   const deleteCategory = useCallback(async (id: string) => {

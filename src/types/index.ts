@@ -16,6 +16,7 @@ export interface Email {
   categoryId?: string;
   isProcessed: boolean;
   parentFolderId?: string;
+  categories?: string[];
 }
 
 export interface CategoryStats {
@@ -31,5 +32,16 @@ export interface UserSettings {
   batchProcessing: boolean;
   privacyMode: boolean;
 }
+
+export type ReportsSummary = {
+  total: number
+  autoMoved: number
+  skippedBelowThreshold: number
+  feedbackCorrections: number
+  avgConfidence: number | null
+  attachmentUsageRate: number
+}
+
+export type TopCategory = { categoryId: string; count: number }
 
 export {}
